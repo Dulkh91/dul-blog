@@ -1,0 +1,44 @@
+---
+import LayoutDashboard from "../LayoutDashboard.astro";
+import CreateCategory from "@components/CreateCategory";
+
+export const prerender = false;
+
+interface Category {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+interface CategoryResponse {
+  categories?: Category[];
+  error?: string;
+}
+
+let categories: Category[] = [];
+let error = '';
+try {
+  const response = await fetch(new URL('/api/category/category', Astro.url));
+  const result = await response.json() as CategoryResponse;
+  if (!response.ok) throw new Error(result.error ?? `មិនអាចទាញយក category បានទេ (${response.status})។`);
+  categories = result.categories ?? [];
+} catch (err) {
+  console.error('Failed to fetch categories:', err);
+  error = err instanceof Error ? err.message : 'មិនអាចទាញយក category បានទេ។';
+}
+---
+
+<LayoutDashboard>
+  <CreateCategory client:load />
+  <hr class="my-6" />
+
+  {error ? (
+    <p role="alert" class="text-sm text-destructive">{error}</p>
+  ) : categories.length ? (
+    <ul class="space-y-2">
+      {categories.map((category) => <li class="rounded-md border p-3">{category.name}</li>)}
+    </ul>
+  ) : (
+    <p class="text-sm text-muted-foreground">មិនទាន់មាន category ទេ។</p>
+  )}
+</LayoutDashboard>

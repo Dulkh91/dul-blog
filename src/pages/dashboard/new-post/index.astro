@@ -1,0 +1,38 @@
+---
+import DashboardLayout from '../LayoutDashboard.astro'
+import FormPost from '@components/FormPost';
+const postId = Astro.url.searchParams.get('postId') ?? undefined;
+export const prerender = false;
+
+interface EditablePost {
+  title: string;
+  content: string;
+  published: boolean;
+  categoryId: string | null;
+  tagIds: string[];
+}
+
+let initialPost: EditablePost | undefined;
+let loadError = '';
+
+if (postId) {
+  try {
+    const response = await fetch(new URL(`/api/posts/posts?id=${encodeURIComponent(postId)}`, Astro.url));
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? 'មិនអាចទាញយកអត្ថបទបានទេ។');
+    initialPost = {
+      title: result.post.title,
+      content: result.post.content,
+      published: result.post.published,
+      categoryId: result.post.categoryId,
+      tagIds: result.post.tags?.map((tag: { id: string }) => tag.id) ?? [],
+    };
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : 'មិនអាចទាញយកអត្ថបទបានទេ។';
+  }
+}
+---
+
+<DashboardLayout>
+  <FormPost client:load postId={postId} initialPost={initialPost} initialLoadError={loadError} />
+</DashboardLayout>

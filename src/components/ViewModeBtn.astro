@@ -1,0 +1,33 @@
+---
+import {LayoutGrid, TextAlignJustify } from 'lucide-react'
+const selectedCategory = Astro.url.searchParams.get('category')
+---
+
+<!-- ផ្នែក Header និង ប៊ូតុងប្តូរទម្រង់ Layout -->
+ 
+            <div class="flex items-center justify-between mb-6">
+                {selectedCategory == null &&  <h3 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">អត្ថបទថ្មីៗ</h3>}
+               
+                <!-- Buttons Switcher -->
+                <div class="flex items-center justify-items-end gap-1 p-1 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50 dark:bg-zinc-900 ml-auto">
+                    <button 
+                        x-on:click="setView('grid')"
+                        x-bind:class="viewMode === 'grid' ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                        class="p-1.5 rounded-md transition-all cursor-pointer"
+                        title="Grid View"
+                    >
+                        <LayoutGrid size={16} />
+                    </button>
+                    <button 
+                        x-on:click="setView('list')"
+                        x-bind:class="viewMode === 'list' ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                        class="p-1.5 rounded-md transition-all cursor-pointer"
+                        title="List View"
+                    >
+                        <TextAlignJustify size={16} />
+                    </button>  
+                </div>
+            </div>
+
+
+

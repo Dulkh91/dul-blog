@@ -1,0 +1,80 @@
+
+<hamberger-bar>
+  <button
+    type="button"
+    class="hamberger block focus:outline-none "
+    aria-label="បើកម៉ឺនុយ"
+    aria-controls="mobile-category-menu"
+    aria-expanded="false"
+  >
+    <span class="dark:bg-white bg-gray-800 hamberger-top "></span>
+    <span class="dark:bg-white  bg-gray-800 hamberger-middle"></span>
+    <span class="dark:bg-white  bg-gray-800 hamberger-bottom"></span>
+  </button>
+</hamberger-bar>
+
+<style>
+  .hamberger {
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    position: relative;
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+  }
+
+  .hamberger:hover {
+    background-color: rgb(161 161 170 / 0.15);
+  }
+
+  .hamberger-top,
+  .hamberger-middle,
+  .hamberger-bottom {
+    width: 20px;
+    height: 2px;
+    top: 10px;
+    left: 8px;
+    position: absolute;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+
+  .hamberger-middle {
+    transform: translateY(7px);
+  }
+  .hamberger-bottom {
+    transform: translateY(14px);
+  }
+
+  .open .hamberger-top {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .open .hamberger-middle {
+    opacity: 0;
+  }
+  .open .hamberger-bottom {
+    transform: translateY(7px) rotate(-45deg);
+  }
+</style>
+
+
+<script>
+  import { isOpenMenu } from '../stores/store'
+
+  const button = document.querySelector<HTMLButtonElement>('.hamberger');
+  const panel = document.querySelector<HTMLElement>('#mobile-category-menu');
+
+  if (button && panel) {
+    isOpenMenu.subscribe((isOpen) => {
+      button.classList.toggle('open', isOpen);
+      button.setAttribute('aria-expanded', String(isOpen));
+      button.setAttribute('aria-label', isOpen ? 'បិទម៉ឺនុយ' : 'បើកម៉ឺនុយ');
+      panel.classList.toggle('hidden', !isOpen);
+      panel.classList.toggle('flex', isOpen);
+    });
+
+    button.addEventListener('click', () => {
+      isOpenMenu.set(!isOpenMenu.get());
+    });
+  }
+</script>
+

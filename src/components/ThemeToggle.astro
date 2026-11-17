@@ -1,0 +1,31 @@
+<button
+  type="button"
+  data-theme-toggle
+  aria-label="ប្តូរទៅ dark mode"
+  title="ប្តូរទៅ dark mode"
+  class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+>
+  <svg data-theme-icon="light" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6.5 6.5 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+  <svg data-theme-icon="dark" class="hidden" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+</button>
+
+<script>
+  import { theme, toggleTheme } from '../stores/theme';
+
+  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+
+  if (button) {
+    const moon = button.querySelector<SVGElement>('[data-theme-icon="light"]');
+    const sun = button.querySelector<SVGElement>('[data-theme-icon="dark"]');
+
+    theme.subscribe((mode) => {
+      document.documentElement.classList.toggle('dark', mode === 'dark');
+      button.setAttribute('aria-label', mode === 'dark' ? 'ប្តូរទៅ light mode' : 'ប្តូរទៅ dark mode');
+      button.title = mode === 'dark' ? 'ប្តូរទៅ light mode' : 'ប្តូរទៅ dark mode';
+      moon?.classList.toggle('hidden', mode === 'dark');
+      sun?.classList.toggle('hidden', mode !== 'dark');
+    });
+
+    button.addEventListener('click', toggleTheme);
+  }
+</script>

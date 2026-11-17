@@ -1,0 +1,83 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/global.css';
+import { prisma } from '../../../lib/prisma';
+
+import { formatShortDateTime } from '@components/lib/date'
+
+export const prerender = false;
+
+interface DisplayPost {
+  title: string;
+  content: string;
+  createdAt: Date;
+  author: { name: string } | null;
+  category: { name: string; slug: string } | null;
+  tags: { id: string; name: string }[];
+}
+
+const categorySlug = Astro.params.category;
+const slug = Astro.params.slug;
+let post: DisplayPost | null = null;
+let loadError = false;
+
+try {
+  if (categorySlug && slug) {
+    post = await prisma.post.findFirst({
+      where: { slug, published: true, category: { slug: categorySlug } },
+      include: {
+        author: { select: { name: true } },
+        category: { select: { name: true, slug: true } },
+        tags: { select: { id: true, name: true } },
+      },
+    });
+  }
+} catch (error) {
+  console.error(`Failed to load post "${slug}" in category "${categorySlug}":`, error);
+  loadError = true;
+}
+
+if (loadError) Astro.response.status = 500;
+else if (!post) Astro.response.status = 404;
+
+---
+
+<Layout>
+  {loadError ? (
+    <p role="alert">មិនអាចទាញយកអត្ថបទបានទេ។ សូមសាកល្បងម្ដងទៀត។</p>
+  ) : post ? (
+    <div class=" md:min-w-5xl md:max-w-5xl">
+      <a
+        href={`/?category=${encodeURIComponent(categorySlug ?? '')}`}
+        class="text-sm text-muted-foreground hover:underline"
+      >
+        ← ត្រឡប់ទៅ Category
+      </a>
+      <header class="mt-6 space-y-3 border-b pb-6">
+        <h1 class="text-3xl font-bold">{post.title}</h1>
+        <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          {formatShortDateTime(post.createdAt)}
+          {post.author && <span>· {post.author.name}</span>}
+          {/* {post.category && <span class="rounded border px-2 py-0.5">{post.category.name}</span>} */}
+        </div>
+        {post.tags.length > 0 && (
+          <ul class="flex flex-wrap gap-2">
+            {post.tags.map((tag) => <li class="rounded-full border px-2 py-1 text-xs">{tag.name}</li>)}
+          </ul>
+        )}
+      </header>
+      <article class="prose prose-lg dark:prose-invert mt-8 max-w-none rounded-xl bg-white p-6 dark:bg-zinc-900 sm:p-8" set:html={post.content} />
+    </div>
+  ) : (
+    <section>
+      <h1 class="text-2xl font-semibold">រកមិនឃើញអត្ថបទនេះទេ</h1>
+      <p class="mt-2 text-muted-foreground">អត្ថបទអាចមិនមានក្នុង category នេះ ឬមិនទាន់បានផ្សាយ។</p>
+      <a
+        href={`/?category=${encodeURIComponent(categorySlug ?? '')}`}
+        class="mt-4 inline-block underline"
+      >
+        ត្រឡប់ទៅ Category
+      </a>
+    </section>
+  )}
+</Layout>

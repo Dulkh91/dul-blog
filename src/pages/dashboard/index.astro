@@ -1,0 +1,63 @@
+---
+import LayoutDashboard from '../dashboard/LayoutDashboard.astro'
+import Card from '@components/Card.astro';
+
+export const prerender = false;
+
+type PostProp = {
+  id: string;
+  title: string;
+  createdAt: string;
+  category: { id: string; name: string } | null;
+  tags: { id: string; name: string }[];
+  published: boolean;
+}
+
+interface PostListResponse {
+  posts: Array<PostProp>;
+  error?: string;
+}
+
+let posts: PostListResponse['posts'] = [];
+let error = '';
+
+try {
+  const response = await fetch(new URL('/api/posts/posts?limit=50&includeDrafts=true', Astro.url));
+  const data = await response.json() as PostListResponse;
+  
+
+  if (!response.ok) {
+    error = data.error ?? 'មិនអាចទាញយកអត្ថបទបានទេ។';
+  } else {
+    posts = data.posts ?? [];
+  }
+} catch {
+  error = 'មិនអាចភ្ជាប់ទៅ API បានទេ។';
+}
+
+---
+
+<LayoutDashboard>
+    
+  <section class="space-y-4">
+    <div>
+      <h1 class="text-2xl font-semibold">អត្ថបទទាំងអស់</h1>
+    </div>
+
+    {error ? (
+      <p role="alert" class="rounded-md border border-destructive/30 p-4 text-sm text-destructive">{error}</p>
+    ) : posts.length ? (
+      <div class="space-y-3 group">
+        {posts.map((post) => <Card 
+            id={post.id} 
+            title={post.title} 
+            createdAt={post.createdAt} 
+            category={post.category}
+            tags={post.tags}
+            published={post.published} />)}
+      </div>
+    ) : (
+      <p class="rounded-md border p-4 text-sm text-muted-foreground">មិនទាន់មានអត្ថបទទេ។</p>
+    )}
+  </section>
+</LayoutDashboard>

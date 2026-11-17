@@ -1,0 +1,103 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import Hamberger  from './Hamberger.astro';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface CategoryResponse {
+  categories?: Category[];
+}
+
+let categories: Category[] = [];
+const { category } = Astro.params;
+const selectedCategory = Astro.url.searchParams.get('category') ?? category;
+
+try {
+  const response = await fetch(new URL('/api/category/category', Astro.url));
+  if (response.ok) {
+    const result = await response.json() as CategoryResponse;
+    categories = result.categories ?? [];
+  }
+} catch (error) {
+  console.error('Failed to fetch categories for navbar:', error);
+}
+
+const baseLinkClass = 'shrink-0 rounded-full px-3 py-1.5 transition-colors';
+const activeLinkClass = 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900';
+const inactiveLinkClass = 'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white';
+---
+
+<div class="mx-auto flex min-h-16 max-w-5xl md:w-full justify-center gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
+  <a href="/" class="flex shrink-0 items-center gap-2.5 group focus:outline-none">
+    <span class="h-2.5 w-2.5 rounded-full bg-indigo-500 transition-transform group-hover:scale-125"></span>
+    <span class="text-base font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-lg">
+      Dul<span class="text-zinc-400 dark:text-zinc-500 font-normal">.blog</span>
+    </span>
+  </a>
+
+<!-- Menu -->
+  <div class="flex items-center space-x-2 ml-auto">
+
+    <!-- Menu Destop -->
+    <div class=" hidden md:flex">
+        <nav aria-label="Categories" class="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        <a
+          href="/"
+          aria-current={!selectedCategory ? 'page' : undefined}
+          class={`${baseLinkClass} ${!selectedCategory ? activeLinkClass : inactiveLinkClass}`}
+        >
+          ទាំងអស់
+        </a>
+        {categories.map((category) => {
+          const isActive = selectedCategory === category.slug;
+          return (
+            <a
+              href={`/?category=${encodeURIComponent(category.slug)}`}
+              aria-current={isActive ? 'page' : undefined}
+              class={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
+            >
+              {category.name}
+            </a>
+          );
+        })}
+      </nav>
+    </div>
+    <!-- Menu Mobile -->
+    <div class="flex justify-center items-center md:hidden">
+      <Hamberger/>
+    </div>
+    
+    <ThemeToggle />
+  </div>
+</div>
+
+<nav
+  id="mobile-category-menu"
+  aria-label="Categories"
+  class="mx-auto hidden max-w-5xl flex-col gap-1 px-4 pb-4 sm:px-6 md:hidden"
+>
+  <a
+    href="/"
+    aria-current={!selectedCategory ? 'page' : undefined}
+    class={`${baseLinkClass} ${!selectedCategory ? activeLinkClass : inactiveLinkClass}`}
+  >
+    ទាំងអស់
+  </a>
+  {categories.map((category) => {
+    const isActive = selectedCategory === category.slug;
+    return (
+      <a
+        href={`/?category=${encodeURIComponent(category.slug)}`}
+        aria-current={isActive ? 'page' : undefined}
+        class={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
+      >
+        {category.name}
+      </a>
+    );
+  })}
+</nav>
+
