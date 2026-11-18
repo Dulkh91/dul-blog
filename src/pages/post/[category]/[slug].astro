@@ -4,6 +4,7 @@ import '../../../styles/global.css';
 import { prisma } from '../../../lib/prisma';
 
 import { formatShortDateTime } from '@components/lib/date'
+import {CalendarDays,User} from 'lucide-react'
 
 export const prerender = false;
 
@@ -46,7 +47,7 @@ else if (!post) Astro.response.status = 404;
   {loadError ? (
     <p role="alert">មិនអាចទាញយកអត្ថបទបានទេ។ សូមសាកល្បងម្ដងទៀត។</p>
   ) : post ? (
-    <div class=" md:min-w-5xl md:max-w-5xl">
+    <div class=" w-full min-w-0">
       <a
         href={`/?category=${encodeURIComponent(categorySlug ?? '')}`}
         class="text-sm text-muted-foreground hover:underline"
@@ -54,19 +55,20 @@ else if (!post) Astro.response.status = 404;
         ← ត្រឡប់ទៅ Category
       </a>
       <header class="mt-6 space-y-3 border-b pb-6">
-        <h1 class="text-3xl font-bold">{post.title}</h1>
-        <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          {formatShortDateTime(post.createdAt)}
-          {post.author && <span>· {post.author.name}</span>}
+        <h3 class=" text-xl md:text-3xl font-bold">{post.title}</h3>
+        <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm text-muted-foreground">
+          <CalendarDays size={14}/>  <span>{formatShortDateTime(post.createdAt)}</span>
+          {post.author && <User size={14}/><span> {post.author.name}</span>}
           {/* {post.category && <span class="rounded border px-2 py-0.5">{post.category.name}</span>} */}
         </div>
-        {post.tags.length > 0 && (
-          <ul class="flex flex-wrap gap-2">
+      </header>
+      <article class="prose prosee-sm md:prose-lg dark:prose-invert mt-2 max-w-none rounded-xl bg-white p-6 dark:bg-zinc-900 sm:p-8" set:html={post.content} />
+      {post.tags.length > 0 && (
+          <ul class="flex flex-wrap border-t border-gray-200 dark:border-0 rounded-t-xl transition-colors duration-300 bg-white p-2 dark:bg-zinc-900 mt-2 gap-2">
+            <li class=" bg-white  dark:bg-zinc-900 transition-colors duration-300 px-2">Tag:</li>
             {post.tags.map((tag) => <li class="rounded-full border px-2 py-1 text-xs">{tag.name}</li>)}
           </ul>
         )}
-      </header>
-      <article class="prose prose-lg dark:prose-invert mt-8 max-w-none rounded-xl bg-white p-6 dark:bg-zinc-900 sm:p-8" set:html={post.content} />
     </div>
   ) : (
     <section>

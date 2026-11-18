@@ -1,88 +1,55 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ViewModeBtn from '@components/ViewModeBtn.astro'
-import CardGridView  from '@components/CardGridView.astro';
-import CardListView  from '@components/CardListView.astro';
-
+import PostFeed from '@components/PostFeed';
 
 export const prerender = false;
 
-interface Posts{
-	id: string;
-	title: string;
-	excerpt: string | null;
-	slug: string;
-	author: {name: string } | null;
-	category: {name: string; slug: string} | null
-	createdAt: Date;
-	
+interface Post {
+  id: string;
+  title: string;
+  excerpt: string | null;
+  slug: string;
+  author: { name: string } | null;
+  category: { name: string; slug: string } | null;
+  createdAt: Date;
 }
-
 
 interface PostResponse {
-	posts?: Posts[];
-	error?: string;
+  posts?: Post[];
+  error?: string;
+  pagination?: { page: number; limit: number; total: number; totalPages: number };
 }
 
-let posts: Posts[] = []
-let error = ''
-const categorySlug = Astro.url.searchParams.get('category');
+const query = Astro.url.searchParams.get('q')?.trim() ?? '';
+const category = Astro.url.searchParams.get('category') ?? '';
+let posts: Post[] = [];
+let error = '';
+let totalPages = 1;
 
- try {
-	const postsUrl = new URL('/api/posts/posts', Astro.url);
-	if (categorySlug) postsUrl.searchParams.set('category', categorySlug);
-	const response = await fetch(postsUrl);
-	const result = await response.json() as  PostResponse
-	if(!response.ok) throw new Error(`Failed to fetch ${response.status}`)
-  posts = result.posts ?? []
- } catch (err) {
-	console.error("Faied to fetch posts:", err)
-	error = err instanceof Error ? err.message: " Failded to fetch post";
- }
+try {
+  const postsUrl = new URL('/api/posts/posts', Astro.url);
+  postsUrl.searchParams.set('page', '1');
+  postsUrl.searchParams.set('limit', '10');
+  if (query) postsUrl.searchParams.set('q', query);
+  if (category) postsUrl.searchParams.set('category', category);
 
+  const response = await fetch(postsUrl);
+  const result = await response.json() as PostResponse;
+  if (!response.ok) throw new Error(`Failed to fetch ${response.status}`);
+  posts = result.posts ?? [];
+  totalPages = result.pagination?.totalPages ?? 1;
+} catch (cause) {
+  console.error('Failed to fetch posts:', cause);
+  error = cause instanceof Error ? cause.message : 'Failed to fetch posts';
+}
 ---
 
-
-
 <Layout>
-    <div class="mx-auto w-full min-w-0 py-8 md:max-w-5xl">
-        <!-- ផ្នែក Alpine.js Wrapper គ្រប់គ្រង View Mode -->
-        <div 
-            x-data={`{ 
-                viewMode: localStorage.getItem('blog-view-mode') || 'grid',
-                setView(mode) {
-                    this.viewMode = mode;
-                    localStorage.setItem('blog-view-mode', mode);
-                }
-            }`}
-        >
-            <ViewModeBtn/>
-
-            {error ? (
-                <p role="alert" class="text-sm text-destructive">{error}</p>
-            ) : (
-
-				<section
-					x-bind:class="viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4' : 'flex flex-col gap-3'"
-					class="w-full min-w-0 transition-all duration-300"
-                >
-                    {posts.map(post => (
-						<div class="contents">
-							<div x-show="viewMode === 'grid'" class="h-full min-w-0">
-								<CardGridView post={post} />
-							</div>
-							<div x-show="viewMode === 'list'" class="md:w-full max-w-6xl  md:min-w-5xl">
-								<CardListView post={post}/>
-							</div>
-						</div>
-                    ))}
-                </section>
-				
-
-            )}
-        </div>
-
-    </div>
+  <div class="mx-auto w-full md:px-4 md:py-3">
+    {error ? (
+      <p role="alert" class="text-sm text-destructive">{error}</p>
+    ) : (
+      <PostFeed client:load initialPosts={posts} totalPages={totalPages} query={query} category={category} />
+    )}
+  </div>
 </Layout>
-
-

@@ -58,7 +58,7 @@ function isPrismaError(error: unknown, code: string): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === code;
 }
 
-// GET /api/posts?page=1&limit=10&category=slug&tag=slug&includeDrafts=true
+// GET /api/posts?page=1&limit=10&category=slug&tag=slug&q=term&includeDrafts=true
 export const GET: APIRoute = async ({ url }) => {
   const postId = url.searchParams.get('id');
   if (postId) {
@@ -89,8 +89,18 @@ export const GET: APIRoute = async ({ url }) => {
   const where: any = includeDrafts ? {} : { published: true };
   const category = url.searchParams.get('category');
   const tag = url.searchParams.get('tag');
+  const query = url.searchParams.get('q')?.trim();
   if (category) where.category = { slug: category };
   if (tag) where.tags = { some: { slug: tag } };
+  if (query) {
+    where.OR = [
+      { title: { contains: query, mode: 'insensitive' } },
+      { excerpt: { contains: query, mode: 'insensitive' } },
+      { content: { contains: query, mode: 'insensitive' } },
+      { author: { is: { name: { contains: query, mode: 'insensitive' } } } },
+      { category: { is: { name: { contains: query, mode: 'insensitive' } } } },
+    ];
+  }
 
   try {
     const [posts, total] = await Promise.all([

@@ -44,7 +44,7 @@ else if (!post) Astro.response.status = 404;
     {loadError ? (
       <p role="alert">មិនអាចទាញយកអត្ថបទបានទេ។ សូមសាកល្បងម្ដងទៀត។</p>
     ) : post ? (
-      <div class=" md:max-w-5xl md:min-w-5xl">
+      <div class=" w-full min-w-0">
         <a href="/" class="text-sm text-muted-foreground hover:underline">← ត្រឡប់ទៅទំព័រដើម</a>
         <header class="mt-6 space-y-3 border-b pb-6">
           <h1 class="text-3xl font-bold">{post.title}</h1>

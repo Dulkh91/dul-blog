@@ -49,5 +49,5 @@ export function formatPostDate(date: Date | string | number) {
 
 export function formatShortDateTime(date: Date | string | number) {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return format(d, 'dd MMM,yy HH:mm', { locale: km });
+  return format(d, 'dd MMM yy HH:mm', { locale: km });
 }
