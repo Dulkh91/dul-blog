@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PostFeed from '@components/PostFeed';
+import BackTop from '@components/BackTop';
 
 export const prerender = false;
 
@@ -22,6 +23,7 @@ interface PostResponse {
 
 const query = Astro.url.searchParams.get('q')?.trim() ?? '';
 const category = Astro.url.searchParams.get('category') ?? '';
+const tag = Astro.url.searchParams.get('tag') ?? '';
 let posts: Post[] = [];
 let error = '';
 let totalPages = 1;
@@ -29,9 +31,10 @@ let totalPages = 1;
 try {
   const postsUrl = new URL('/api/posts/posts', Astro.url);
   postsUrl.searchParams.set('page', '1');
-  postsUrl.searchParams.set('limit', '10');
+  postsUrl.searchParams.set('limit', '6');
   if (query) postsUrl.searchParams.set('q', query);
   if (category) postsUrl.searchParams.set('category', category);
+  if (tag) postsUrl.searchParams.set('tag', tag);
 
   const response = await fetch(postsUrl);
   const result = await response.json() as PostResponse;
@@ -49,7 +52,8 @@ try {
     {error ? (
       <p role="alert" class="text-sm text-destructive">{error}</p>
     ) : (
-      <PostFeed client:load initialPosts={posts} totalPages={totalPages} query={query} category={category} />
+      <PostFeed client:load initialPosts={posts} totalPages={totalPages} query={query} category={category} tag={tag} />
     )}
   </div>
+  <BackTop client:load/>
 </Layout>

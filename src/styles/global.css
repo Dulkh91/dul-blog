@@ -1,8 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 @plugin "@tailwindcss/typography";
+
+.backtop-responsive {
+    right: 100px !important;
+}
+
+/* Tablet-specific styles */
+@media only screen and (min-width: 768px) and (max-width: 1024px) {
+  .backtop-responsive {
+        right: 50px !important;
+    }
+}
+@media (max-width: 767px) {
+    .backtop-responsive {
+        right: 10px !important;
+    }
+}
 
 @custom-variant dark (&:is(.dark *));
 

@@ -2,6 +2,13 @@
 ---
 import '../../styles/global.css'
 import { DashboardShell } from '@components/dashboard-shell';
+import { getSessionUser } from '../../lib/session';
+
+export const prerender = false;
+
+const user = await getSessionUser(Astro.cookies);
+const userName = user?.name ?? user?.email ?? 'User name';
+const userRole = user?.role ?? 'EDITOR';
 ---
 <!DOCTYPE html>
 <html lang="km">
@@ -12,7 +19,7 @@ import { DashboardShell } from '@components/dashboard-shell';
 </head>
 <body>
 
-    <DashboardShell client:load>
+    <DashboardShell client:load userName={userName} userRole={userRole}>
       <slot />
     </DashboardShell>
     

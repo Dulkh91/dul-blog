@@ -1,6 +1,6 @@
 ---
-import DashboardLayout from '../LayoutDashboard.astro'
 import FormPost from '@components/FormPost';
+import DashboardLayout from '../DashboardLayout.astro'
 const postId = Astro.url.searchParams.get('postId') ?? undefined;
 export const prerender = false;
 
@@ -17,7 +17,9 @@ let loadError = '';
 
 if (postId) {
   try {
-    const response = await fetch(new URL(`/api/posts/posts?id=${encodeURIComponent(postId)}`, Astro.url));
+    const response = await fetch(new URL(`/api/posts/posts?id=${encodeURIComponent(postId)}`, Astro.url), {
+      headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+    });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error ?? 'មិនអាចទាញយកអត្ថបទបានទេ។');
     initialPost = {

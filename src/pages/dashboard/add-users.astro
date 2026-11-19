@@ -1,0 +1,107 @@
+---
+import DashboardLayout from './DashboardLayout.astro';
+import { prisma } from '../../lib/prisma';
+
+export const prerender = false;
+
+let message = '';
+let messageType: 'success' | 'error' = 'success';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  const name = String(form.get('name') ?? '').trim();
+  const role = String(form.get('role') ?? '');
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    message = 'សូមបញ្ចូលអ៊ីមែលឲ្យបានត្រឹមត្រូវ។';
+    messageType = 'error';
+  } else if (role !== 'ADMIN' && role !== 'EDITOR') {
+    message = 'សូមជ្រើសរើស role ត្រឹមត្រូវ។';
+    messageType = 'error';
+  } else {
+    try {
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing?.role === 'ADMIN' && role === 'EDITOR') {
+        const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+        if (adminCount <= 1) {
+          message = 'ត្រូវមាន Admin យ៉ាងតិចម្នាក់។ សូមដំឡើងអ្នកប្រើផ្សេងជា Admin ជាមុន។';
+          messageType = 'error';
+        }
+      }
+
+      if (!message) {
+        await prisma.user.upsert({
+          where: { email },
+          update: { role, ...(name ? { name } : {}) },
+          create: { email, name: name || null, role },
+        });
+        return Astro.redirect('/dashboard/add-users?saved=1', 303);
+      }
+    } catch (error) {
+      console.error('Could not save dashboard user:', error);
+      message = 'មិនអាចរក្សាទុកអ្នកប្រើបានទេ។ សូមពិនិត្យ database។';
+      messageType = 'error';
+    }
+  }
+}
+
+if (Astro.url.searchParams.get('saved') === '1') message = 'បានរក្សាទុកអ្នកប្រើក្នុង database។';
+
+const users = await prisma.user.findMany({
+  select: { id: true, name: true, email: true, role: true, createdAt: true },
+  orderBy: [{ role: 'asc' }, { email: 'asc' }],
+});
+---
+
+<DashboardLayout>
+  <section class="mx-auto max-w-4xl space-y-6">
+    <header>
+      <h1 class="text-2xl font-semibold">បន្ថែមអ្នកប្រើ</h1>
+      <p class="mt-1 text-sm text-muted-foreground">បន្ថែមអ៊ីមែល Google និងជ្រើសរើសសិទ្ធិ Admin ឬ Editor។</p>
+    </header>
+
+    {message && (
+      <p role={messageType === 'error' ? 'alert' : 'status'} class:list={[
+        'rounded-md border px-4 py-3 text-sm',
+        messageType === 'error' ? 'border-red-300 text-red-700 dark:text-red-300' : 'border-emerald-300 text-emerald-700 dark:text-emerald-300',
+      ]}>{message}</p>
+    )}
+
+    <form method="post" class="grid gap-4 rounded-xl border p-5 sm:grid-cols-2">
+      <label class="space-y-1 text-sm">
+        <span>ឈ្មោះ</span>
+        <input name="name" type="text" autocomplete="name" class="w-full rounded-md border bg-background px-3 py-2" placeholder="ឈ្មោះអ្នកប្រើ" />
+      </label>
+      <label class="space-y-1 text-sm">
+        <span>អ៊ីមែល Google</span>
+        <input name="email" type="email" required autocomplete="email" class="w-full rounded-md border bg-background px-3 py-2" placeholder="name@example.com" />
+      </label>
+      <label class="space-y-1 text-sm sm:col-span-2">
+        <span>Role</span>
+        <select name="role" required class="w-full rounded-md border bg-background px-3 py-2">
+          <option value="EDITOR">Editor</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </label>
+      <button type="submit" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground sm:col-span-2 sm:justify-self-start">រក្សាទុកអ្នកប្រើ</button>
+    </form>
+
+    <div class="overflow-x-auto rounded-xl border">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-muted/60">
+          <tr><th class="px-4 py-3">ឈ្មោះ</th><th class="px-4 py-3">អ៊ីមែល</th><th class="px-4 py-3">Role</th></tr>
+        </thead>
+        <tbody class="divide-y">
+          {users.map((user) => (
+            <tr>
+              <td class="px-4 py-3">{user.name ?? '—'}</td>
+              <td class="px-4 py-3">{user.email}</td>
+              <td class="px-4 py-3"><span class="rounded-full border px-2 py-1 text-xs">{user.role}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</DashboardLayout>

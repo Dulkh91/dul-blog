@@ -79,7 +79,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   const page = Number(url.searchParams.get('page') ?? 1);
-  const limit = Number(url.searchParams.get('limit') ?? 10);
+  const limit = Number(url.searchParams.get('limit') ?? 6);
 
   if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
     return json({ error: 'page ត្រូវតែចាប់ពី 1 និង limit ត្រូវនៅចន្លោះ 1 ដល់ 100។' }, 400);

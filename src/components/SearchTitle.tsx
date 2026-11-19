@@ -3,9 +3,10 @@ import { useRef, useState } from 'react';
 interface Props {
   query: string;
   category: string;
+  tag: string;
 }
 
-export default function SearchTitle({ query, category }: Props) {
+export default function SearchTitle({ query, category, tag }: Props) {
   const [open, setOpen] = useState(Boolean(query));
   const [value, setValue] = useState(query);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,6 +31,7 @@ export default function SearchTitle({ query, category }: Props) {
       onSubmit={() => setOpen(true)}
     >
       {category && <input type="hidden" name="category" value={category} />}
+      {tag && <input type="hidden" name="tag" value={tag} />}
 
       <button
         type="button"

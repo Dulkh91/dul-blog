@@ -2,9 +2,11 @@
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/global.css';
 import { prisma } from '../../../lib/prisma';
+import BackTop from '@components/BackTop';
 
-import { formatShortDateTime } from '@components/lib/date'
-import {CalendarDays,User} from 'lucide-react'
+
+import { formatDate,formatTime } from '@components/lib/date'
+import {CalendarDays,User,Clock} from 'lucide-react'
 
 export const prerender = false;
 
@@ -57,7 +59,7 @@ else if (!post) Astro.response.status = 404;
       <header class="mt-6 space-y-3 border-b pb-6">
         <h3 class=" text-xl md:text-3xl font-bold">{post.title}</h3>
         <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm text-muted-foreground">
-          <CalendarDays size={14}/>  <span>{formatShortDateTime(post.createdAt)}</span>
+          <CalendarDays size={14}/>  {formatDate(post.createdAt)} <Clock size={14}/> {formatTime(post.createdAt)}
           {post.author && <User size={14}/><span> {post.author.name}</span>}
           {/* {post.category && <span class="rounded border px-2 py-0.5">{post.category.name}</span>} */}
         </div>
@@ -82,4 +84,12 @@ else if (!post) Astro.response.status = 404;
       </a>
     </section>
   )}
+  <BackTop  client:load/>
 </Layout>
+
+
+<!-- Create Code Highlighter with Prism -->
+<script >
+ import '../../../javascript/prism'
+</script>
+

@@ -15,6 +15,10 @@ export function formatDate(
     locale: locales[locale === 'en' ? 'enUS' : 'km'] 
   });
 }
+export function formatTime(date: Date | string | number) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return format(d, 'HH:mm', { locale: km });
+}
 
 export function timeAgo(
   date: Date | string | number,
@@ -47,7 +51,3 @@ export function formatPostDate(date: Date | string | number) {
   return format(d, 'dd MMMM yyyy', { locale: km });
 }
 
-export function formatShortDateTime(date: Date | string | number) {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return format(d, 'dd MMM yy HH:mm', { locale: km });
-}

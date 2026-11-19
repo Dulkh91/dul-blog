@@ -1,12 +1,14 @@
 ---
-import LayoutDashboard from "../LayoutDashboard.astro";
-import CreateCategory from "@components/CreateCategory";
+import DashboardLayout from "../DashboardLayout.astro";
+import CategoryManager from "@components/CategoryManager";
 
 export const prerender = false;
 
 interface Category {
   id: string;
   name: string;
+  slug: string;
+  tags: { id: string; name: string; slug: string }[];
   createdAt: string;
 }
 
@@ -28,17 +30,10 @@ try {
 }
 ---
 
-<LayoutDashboard>
-  <CreateCategory client:load />
-  <hr class="my-6" />
-
+<DashboardLayout>
   {error ? (
     <p role="alert" class="text-sm text-destructive">{error}</p>
-  ) : categories.length ? (
-    <ul class="space-y-2">
-      {categories.map((category) => <li class="rounded-md border p-3">{category.name}</li>)}
-    </ul>
   ) : (
-    <p class="text-sm text-muted-foreground">មិនទាន់មាន category ទេ។</p>
+    <CategoryManager client:load initialCategories={categories} />
   )}
-</LayoutDashboard>
+</DashboardLayout>

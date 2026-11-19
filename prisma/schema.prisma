@@ -14,13 +14,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  posts     Post[]
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatar        String?   // Google profile picture
+  
+  // OAuth fields
+  googleId      String?   @unique
+  githubId      String?   @unique // បើចង់បន្ថែម Github
+  role          UserRole  @default(EDITOR)
+  
+  sessions      Session[]
+  posts         Post[]
+  createdAt     DateTime  @default(now())
+}
+
+model AuthBootstrap {
+  id        String   @id
   createdAt DateTime @default(now())
 }
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
 
 model Category {
   id          String   @id @default(uuid())
@@ -28,14 +56,16 @@ model Category {
   slug        String   @unique
   description String?
   posts       Post[]
+  tags        Tag[]
   createdAt   DateTime @default(now())
 }
 
 model Tag {
-  id    String @id @default(uuid())
-  name  String @unique
-  slug  String @unique
-  posts Post[]
+  id         String     @id @default(uuid())
+  name       String     @unique
+  slug       String     @unique
+  posts      Post[]
+  categories Category[]
 }
 
 model Post {

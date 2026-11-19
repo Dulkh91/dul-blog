@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css'
 import Navbar from '@components/Navbar.astro'
+import  Footer  from '@components/Footer.astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -22,10 +23,13 @@ import Navbar from '@components/Navbar.astro'
 		<header class="sticky top-0 z-40 w-full  backdrop-blur-md bg-white/80 dark:bg-[#0A0A0B]/80 border-b border-zinc-200/80 dark:border-zinc-800/80 transition-colors">
 			<Navbar/>
 		</header>
-		<main class="mx-auto w-full max-w-5xl px-2.5 md:px-5 my-3 ">
+		<main class="mx-auto my-3 w-full max-w-5xl flex-1 px-2.5 md:px-5">
 			<slot />
 		</main>
-		
+
+		<footer class="border-t border-zinc-200/80 dark:border-zinc-800/80 py-8">
+			<Footer/>
+		</footer>
 	</body>
 </html>
 

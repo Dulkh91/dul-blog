@@ -21,6 +21,13 @@ interface InitialPost extends Omit<FormData, 'categoryId' | 'tagIds'> {
 interface Tag {
   id: string;
   name: string;
+  slug?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  tags: Tag[];
 }
 
 const emptyForm: FormData = { title: '', content: '', published: false, categoryId: '', tagIds: [] };
@@ -61,7 +68,7 @@ export default function FormPost({
   const [saveStatus, setSaveStatus] = useState('');
   const [error, setError] = useState(initialLoadError);
   const [success, setSuccess] = useState('');
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [categoryError, setCategoryError] = useState('');
   const [tags, setTags] = useState<Tag[]>([]);
   const [newTagName, setNewTagName] = useState('');
@@ -73,6 +80,10 @@ export default function FormPost({
   const dirtyRef = useRef(false);
   const savePromiseRef = useRef<Promise<SaveResult> | null>(null);
   currentDataRef.current = formData;
+  const selectedCategory = categories.find((category) => category.id === formData.categoryId);
+  const availableTags = formData.categoryId
+    ? tags.filter((tag) => selectedCategory?.tags.some((subcategory) => subcategory.id === tag.id) || formData.tagIds.includes(tag.id))
+    : tags;
 
   useEffect(() => {
     void fetch('/api/category/category')
@@ -196,12 +207,17 @@ export default function FormPost({
       const response = await fetch('/api/tag/tag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, ...(formData.categoryId ? { categoryId: formData.categoryId } : {}) }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.error ?? 'មិនអាចបង្កើត tag បានទេ។');
 
       setTags((current) => current.some((tag) => tag.id === result.id) ? current : [...current, result]);
+      if (formData.categoryId) {
+        setCategories((current) => current.map((category) => category.id === formData.categoryId && !category.tags.some((tag) => tag.id === result.id)
+          ? { ...category, tags: [...category.tags, result] }
+          : category));
+      }
       updateForm({ tagIds: [...formData.tagIds, result.id] });
       setNewTagName('');
     } catch (createError) {
@@ -276,7 +292,15 @@ export default function FormPost({
           <select
             id="post-category"
             value={formData.categoryId}
-            onChange={(event) => updateForm({ categoryId: event.target.value })}
+            onChange={(event) => {
+              const categoryId = event.target.value;
+              const nextCategory = categories.find((category) => category.id === categoryId);
+              const subcategoryIds = new Set(nextCategory?.tags.map((tag) => tag.id) ?? []);
+              updateForm({
+                categoryId,
+                ...(categoryId ? { tagIds: formData.tagIds.filter((id) => subcategoryIds.has(id)) } : {}),
+              });
+            }}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           >
             <option value="">គ្មាន Category</option>
@@ -288,7 +312,7 @@ export default function FormPost({
         <div className="space-y-2">
           <p className="text-sm font-medium">Tags (ជ្រើសបានច្រើន)</p>
           <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
-            {tags.length ? tags.map((tag) => (
+            {availableTags.length ? availableTags.map((tag) => (
               <label key={tag.id} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

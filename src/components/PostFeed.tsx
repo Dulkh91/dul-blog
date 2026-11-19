@@ -18,6 +18,7 @@ interface Props {
   totalPages: number;
   query: string;
   category: string;
+  tag: string;
 }
 
 interface PostsResponse {
@@ -66,7 +67,7 @@ function ListCard({ post }: { post: PostFeedItem }) {
   );
 }
 
-export default function PostFeed({ initialPosts, totalPages: initialTotalPages, query, category }: Props) {
+export default function PostFeed({ initialPosts, totalPages: initialTotalPages, query, category, tag }: Props) {
   const [posts, setPosts] = useState(initialPosts);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
@@ -100,9 +101,10 @@ export default function PostFeed({ initialPosts, totalPages: initialTotalPages, 
     setError('');
 
     try {
-      const params = new URLSearchParams({ page: String(page + 1), limit: '10' });
+      const params = new URLSearchParams({ page: String(page + 1), limit: '6' });
       if (query) params.set('q', query);
       if (category) params.set('category', category);
+      if (tag) params.set('tag', tag);
 
       const response = await fetch(`/api/posts/posts?${params.toString()}`);
       if (!response.ok) throw new Error('មិនអាចទាញយកអត្ថបទបន្ថែមបានទេ។');
@@ -116,7 +118,7 @@ export default function PostFeed({ initialPosts, totalPages: initialTotalPages, 
       loadingRef.current = false;
       setIsLoading(false);
     }
-  }, [category, page, query, totalPages]);
+  }, [category, page, query, tag, totalPages]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -136,7 +138,7 @@ export default function PostFeed({ initialPosts, totalPages: initialTotalPages, 
       <div className="mb-6 flex items-center justify-between">
         {!category && <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">អត្ថបទថ្មីៗ</h3>}
         <div className="ml-auto flex items-center gap-2">
-          <SearchTitle query={query} category={category} />
+          <SearchTitle query={query} category={category} tag={tag} />
           <div className="flex items-center justify-items-end gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
             <button type="button" onClick={() => chooseView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`cursor-pointer rounded-md p-1.5 transition-all ${view === 'grid' ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
               <LayoutGrid size={16} />

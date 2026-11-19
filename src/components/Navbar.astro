@@ -1,11 +1,12 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
-import Hamberger  from './Hamberger.astro';
+import Hamberger from './Hamberger.astro';
 
 interface Category {
   id: string;
   name: string;
   slug: string;
+  tags: { id: string; name: string; slug: string }[];
 }
 
 interface CategoryResponse {
@@ -15,6 +16,7 @@ interface CategoryResponse {
 let categories: Category[] = [];
 const { category } = Astro.params;
 const selectedCategory = Astro.url.searchParams.get('category') ?? category;
+const selectedTag = Astro.url.searchParams.get('tag');
 
 try {
   const response = await fetch(new URL('/api/category/category', Astro.url));
@@ -29,48 +31,68 @@ try {
 const baseLinkClass = 'shrink-0 rounded-full px-3 py-1.5 transition-colors';
 const activeLinkClass = 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900';
 const inactiveLinkClass = 'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white';
+const categoryHref = (slug: string) => `/?category=${encodeURIComponent(slug)}`;
+const tagHref = (categorySlug: string, tagSlug: string) => `/?category=${encodeURIComponent(categorySlug)}&tag=${encodeURIComponent(tagSlug)}`;
 ---
 
 <div class="mx-auto flex min-h-16 max-w-5xl md:w-full justify-center gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
-  <a href="/" class="flex shrink-0 items-center gap-2.5 group focus:outline-none">
+  <a href="/" class="group flex shrink-0 items-center gap-2.5 focus:outline-none">
     <span class="h-2.5 w-2.5 rounded-full bg-indigo-500 transition-transform group-hover:scale-125"></span>
     <span class="text-base font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-lg">
-      ឌុល<span class="text-zinc-400 text-sm dark:text-zinc-500 font-normal">.blog</span>
+      ឌុល<span class="text-sm font-normal text-zinc-400 dark:text-zinc-500">.blog</span>
     </span>
   </a>
 
-<!-- Menu -->
-  <div class="flex items-center space-x-2 ml-auto">
-
-    <!-- Menu Destop -->
-    <div class=" hidden md:flex">
-        <nav aria-label="Categories" class="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
+  <div class="ml-auto flex items-center space-x-2">
+    <div class="hidden md:flex">
+      <nav aria-label="Categories" class="flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
         <a
           href="/"
-          aria-current={!selectedCategory ? 'page' : undefined}
-          class={`${baseLinkClass} ${!selectedCategory ? activeLinkClass : inactiveLinkClass}`}
-        >
-          ទាំងអស់
-        </a>
-        {categories.map((category) => {
-          const isActive = selectedCategory === category.slug;
+          aria-current={!selectedCategory && !selectedTag ? 'page' : undefined}
+          class={`${baseLinkClass} ${!selectedCategory && !selectedTag ? activeLinkClass : inactiveLinkClass}`}
+        >ទាំងអស់</a>
+
+        {categories.map((item) => {
+          const isActive = selectedCategory === item.slug;
+          const hasActiveTag = isActive && item.tags.some((tag) => tag.slug === selectedTag);
           return (
-            <a
-              href={`/?category=${encodeURIComponent(category.slug)}`}
-              aria-current={isActive ? 'page' : undefined}
-              class={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
-            >
-              {category.name}
-            </a>
+            <div class="group relative">
+              <a
+                href={categoryHref(item.slug)}
+                aria-current={isActive && !selectedTag ? 'page' : undefined}
+                class={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
+              >
+                {item.name}
+                {item.tags.length > 0 && <span aria-hidden="true" class="ml-1 text-[10px]">⌄</span>}
+              </a>
+              {item.tags.length > 0 && (
+                <div class="absolute left-0 top-full z-50 hidden min-w-44 pt-2 group-hover:block group-focus-within:block">
+                  <ul class="rounded-xl border border-zinc-200 bg-white p-1.5 text-sm shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                    {item.tags.map((tag) => {
+                      const isTagActive = hasActiveTag && selectedTag === tag.slug;
+                      return (
+                        <li>
+                          <a
+                            href={tagHref(item.slug, tag.slug)}
+                            aria-current={isTagActive ? 'page' : undefined}
+                            class={`block rounded-lg px-3 py-2 ${isTagActive ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white'}`}
+                          >{tag.name}</a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
     </div>
-    <!-- Menu Mobile -->
-    <div class="flex justify-center items-center md:hidden">
-      <Hamberger/>
+
+    <div class="flex items-center justify-center md:hidden">
+      <Hamberger />
     </div>
-    
+    <a href="/login" class="shrink-0 rounded-full border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">ចូល</a>
     <ThemeToggle />
   </div>
 </div>
@@ -78,26 +100,43 @@ const inactiveLinkClass = 'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-z
 <nav
   id="mobile-category-menu"
   aria-label="Categories"
-  class="mx-auto hidden fixed min-h-screen w-full z-10 dark:bg-stone-900 bg-gray-300 flex-col gap-1 px-4 pb-4 md:hidden"
+  class="fixed left-0 top-16 z-40 hidden min-h-screen w-full flex-col gap-2 bg-gray-100 px-4 pb-4 dark:bg-stone-900 md:hidden"
 >
   <a
     href="/"
-    aria-current={!selectedCategory ? 'page' : undefined}
-    class={`${baseLinkClass} ${!selectedCategory ? activeLinkClass : inactiveLinkClass}`}
-  >
-    ទាំងអស់
-  </a>
-  {categories.map((category) => {
-    const isActive = selectedCategory === category.slug;
+    aria-current={!selectedCategory && !selectedTag ? 'page' : undefined}
+    class={`${baseLinkClass} ${!selectedCategory && !selectedTag ? activeLinkClass : inactiveLinkClass}`}
+  >ទាំងអស់</a>
+  {categories.map((item) => {
+    const isActive = selectedCategory === item.slug;
     return (
-      <a
-        href={`/?category=${encodeURIComponent(category.slug)}`}
-        aria-current={isActive ? 'page' : undefined}
-        class={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
-      >
-        {category.name}
-      </a>
+      <div class="flex items-center gap-2">
+        <a
+          href={categoryHref(item.slug)}
+          aria-current={isActive && !selectedTag ? 'page' : undefined}
+          class={`flex-1 ${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
+        >{item.name}</a>
+        {item.tags.length > 0 && (
+          <details class="group relative">
+            <summary aria-label={`បង្ហាញ subcategory របស់ ${item.name}`} class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800">
+              <span class="transition-transform group-open:rotate-180" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="absolute right-0 top-full z-50 mt-1 min-w-44 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+              <ul>
+                {item.tags.map((tag) => (
+                  <li>
+                    <a
+                      href={tagHref(item.slug, tag.slug)}
+                      aria-current={selectedCategory === item.slug && selectedTag === tag.slug ? 'page' : undefined}
+                      class="block rounded-lg px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                    >{tag.name}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </details>
+        )}
+      </div>
     );
   })}
 </nav>
-

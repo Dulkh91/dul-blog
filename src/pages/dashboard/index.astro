@@ -1,5 +1,5 @@
 ---
-import LayoutDashboard from '../dashboard/LayoutDashboard.astro'
+import DashboardLayout from '../dashboard/DashboardLayout.astro'
 import Card from '@components/Card.astro';
 
 export const prerender = false;
@@ -22,7 +22,9 @@ let posts: PostListResponse['posts'] = [];
 let error = '';
 
 try {
-  const response = await fetch(new URL('/api/posts/posts?limit=50&includeDrafts=true', Astro.url));
+  const response = await fetch(new URL('/api/posts/posts?limit=50&includeDrafts=true', Astro.url), {
+    headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+  });
   const data = await response.json() as PostListResponse;
   
 
@@ -37,7 +39,7 @@ try {
 
 ---
 
-<LayoutDashboard>
+<DashboardLayout>
     
   <section class="space-y-4">
     <div>
@@ -52,7 +54,7 @@ try {
             id={post.id} 
             title={post.title} 
             createdAt={post.createdAt} 
-            category={post.category}
+            category={post.category ? { ...post.category, createdAt: '' } : null}
             tags={post.tags}
             published={post.published} />)}
       </div>
@@ -60,4 +62,4 @@ try {
       <p class="rounded-md border p-4 text-sm text-muted-foreground">មិនទាន់មានអត្ថបទទេ។</p>
     )}
   </section>
-</LayoutDashboard>
+</DashboardLayout>
