@@ -40,7 +40,7 @@ export async function getSessionUser(cookies: AstroCookies) {
 
     return await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, name: true, avatar: true, role: true },
     });
   } catch {
     cookies.delete(SESSION_COOKIE, { path: '/' });

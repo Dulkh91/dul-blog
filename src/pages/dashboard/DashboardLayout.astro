@@ -2,26 +2,48 @@
 ---
 import '../../styles/global.css'
 import { DashboardShell } from '@components/dashboard-shell';
-import { getSessionUser } from '../../lib/session';
 
 export const prerender = false;
 
-const user = await getSessionUser(Astro.cookies);
-const userName = user?.name ?? user?.email ?? 'User name';
+const user = Astro.locals.user!;
 const userRole = user?.role ?? 'EDITOR';
+const currentPath = Astro.url.pathname;
+const searchQuery = Astro.url.searchParams.get('q')?.trim() ?? '';
+const currentCategory = Astro.url.searchParams.get('category')?.trim() ?? '';
+const currentTag = Astro.url.searchParams.get('tag')?.trim() ?? '';
+const currentStatus = Astro.url.searchParams.get('status')?.trim() ?? '';
+
+
 ---
 <!DOCTYPE html>
 <html lang="km">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>DUL Blog Dashboard</title>
 </head>
 <body>
 
-    <DashboardShell client:load userName={userName} userRole={userRole}>
+    <DashboardShell
+      client:load
+      userName={user}
+      userRole={userRole}
+      currentPath={currentPath}
+      searchQuery={searchQuery}
+      currentCategory={currentCategory}
+      currentTag={currentTag}
+      currentStatus={currentStatus}
+    >
       <slot />
     </DashboardShell>
     
 </body>
 </html>
+
+
+
+
+
+
+<!-- const userName = user?.name ?? user?.email ?? 'User name'; -->

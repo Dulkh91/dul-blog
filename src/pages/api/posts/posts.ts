@@ -86,12 +86,29 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   const includeDrafts = url.searchParams.get('includeDrafts') === 'true';
-  const where: any = includeDrafts ? {} : { published: true };
-  const category = url.searchParams.get('category');
-  const tag = url.searchParams.get('tag');
+  const status = url.searchParams.get('status')?.trim().toLowerCase();
+  const where: any = {};
+
+  if (status === 'published') {
+    where.published = true;
+  } else if (status === 'private' || status === 'draft') {
+    where.published = false;
+  } else if (!includeDrafts && status !== 'all') {
+    where.published = true;
+  }
+
+  const category = url.searchParams.get('category')?.trim();
+  const tag = url.searchParams.get('tag')?.trim();
   const query = url.searchParams.get('q')?.trim();
-  if (category) where.category = { slug: category };
-  if (tag) where.tags = { some: { slug: tag } };
+
+  if (category && category !== 'all') {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
+    where.category = isUuid ? { id: category } : { slug: category };
+  }
+  if (tag && tag !== 'all') {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tag);
+    where.tags = { some: isUuid ? { id: tag } : { slug: tag } };
+  }
   if (query) {
     where.OR = [
       { title: { contains: query, mode: 'insensitive' } },
@@ -153,7 +170,7 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 // POST /api/posts
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -169,13 +186,8 @@ export const POST: APIRoute = async ({ request }) => {
   const { id = randomUUID(), title, slug, content, categoryId, tagIds, published } = parsed.data;
 
   try {
-    // Static author for now; create the record automatically on first post.
-    const author = await prisma.user.upsert({
-      where: { email: 'dul@blog.local' },
-      update: { name: 'dul' },
-      create: { name: 'dul', email: 'dul@blog.local' },
-      select: { id: true },
-    });
+    const user = locals.user;
+    if (!user) return json({ error: 'Authentication required.' }, 401);
 
     const postFields = { title, slug, content, excerpt: createExcerpt(content), published };
 
@@ -184,7 +196,7 @@ export const POST: APIRoute = async ({ request }) => {
       create: {
         id,
         ...postFields,
-        author: { connect: { id: author.id } },
+        author: { connect: { id: user.id } },
         ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
         tags: { connect: tagIds.map((tagId) => ({ id: tagId })) },
       },

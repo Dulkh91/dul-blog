@@ -1,23 +1,90 @@
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@components/components/ui/sidebar"
 import { AppSidebar } from "@components/app-sidebar"
+import { Search, X } from "lucide-react"
+import type { UserProp } from "@components/types/userType"
 
-export function DashboardShell({ children, userName, userRole }: { children: ReactNode; userName: string; userRole: string }) {
+export function DashboardShell({
+  children,
+  userName,
+  userRole,
+  currentPath,
+  searchQuery: initialSearch = "",
+  currentCategory = "",
+  currentTag = "",
+  currentStatus = "",
+}: {
+  children: ReactNode
+  userName: UserProp
+  userRole: string
+  currentPath?: string
+  searchQuery?: string
+  currentCategory?: string
+  currentTag?: string
+  currentStatus?: string
+}) {
+  const [searchValue, setSearchValue] = useState(initialSearch)
+
+  useEffect(() => {
+    setSearchValue(initialSearch)
+  }, [initialSearch])
+
+  const handleClear = () => {
+    setSearchValue("")
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href)
+      url.searchParams.delete("q")
+      window.location.href = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "")
+    }
+  }
   return (
     <SidebarProvider>
-      <AppSidebar userName={userName} userRole={userRole} />
+      <AppSidebar userName={userName} userRole={userRole} currentPath={currentPath} />
       <SidebarInset>
         <header className="flex h-14 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <span className="text-sm font-medium " >Dashboard</span>
+          <span className="text-sm font-medium hidden sm:inline">Dashboard</span>
+          
+          <form
+            method="GET"
+            action="/dashboard"
+            role="search"
+            className="relative mx-auto flex w-full max-w-xs sm:max-w-md items-center"
+          >
+            {currentCategory && <input type="hidden" name="category" value={currentCategory} />}
+            {currentTag && <input type="hidden" name="tag" value={currentTag} />}
+            {currentStatus && <input type="hidden" name="status" value={currentStatus} />}
+
+            {/* Search at Dashboard */}
+            <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              name="q"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="ស្វែងរក..."
+              className="w-full rounded-xl border border-input bg-background py-1.5 pl-9 pr-8 text-sm text-foreground shadow-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute right-2.5 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </form>
+
         </header>
         <main className="flex-1 p-6">
           {children}
-          </main>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )

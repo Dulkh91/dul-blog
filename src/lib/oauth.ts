@@ -8,7 +8,7 @@ export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30;
 
 const isProduction = import.meta.env.PROD;
 
-type OAuthEnvName = 'GOOGLE_CLIENT_ID' | 'GOOGLE_CLIENT_SECRET' | 'GOOGLE_REDIRECT_URI';
+type OAuthEnvName = 'GOOGLE_CLIENT_ID' | 'GOOGLE_CLIENT_SECRET' | 'GOOGLE_REDIRECT_URI' | 'GOOGLE_ALLOWED_EMAILS';
 
 function envValue(name: OAuthEnvName) {
   // Keep these references static so Vite/Astro can load values from .env.
@@ -19,7 +19,16 @@ function envValue(name: OAuthEnvName) {
       return import.meta.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
     case 'GOOGLE_REDIRECT_URI':
       return import.meta.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+    case 'GOOGLE_ALLOWED_EMAILS':
+      return import.meta.env.GOOGLE_ALLOWED_EMAILS || process.env.GOOGLE_ALLOWED_EMAILS;
   }
+}
+
+export function getAllowedGoogleEmails() {
+  return (envValue('GOOGLE_ALLOWED_EMAILS') ?? '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 export function getGoogleCredentials() {

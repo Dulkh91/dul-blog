@@ -1,6 +1,8 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import Hamberger from './Hamberger.astro';
+import { Settings } from 'lucide-react';
+
 
 interface Category {
   id: string;
@@ -33,12 +35,15 @@ const activeLinkClass = 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900
 const inactiveLinkClass = 'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white';
 const categoryHref = (slug: string) => `/?category=${encodeURIComponent(slug)}`;
 const tagHref = (categorySlug: string, tagSlug: string) => `/?category=${encodeURIComponent(categorySlug)}&tag=${encodeURIComponent(tagSlug)}`;
+const {user} = Astro.locals
+
+
 ---
 
 <div class="mx-auto flex min-h-16 max-w-5xl md:w-full justify-center gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
   <a href="/" class="group flex shrink-0 items-center gap-2.5 focus:outline-none">
     <span class="h-2.5 w-2.5 rounded-full bg-indigo-500 transition-transform group-hover:scale-125"></span>
-    <span class="text-base font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-lg">
+    <span class="text-base font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-lg moulpali-regular">
       ឌុល<span class="text-sm font-normal text-zinc-400 dark:text-zinc-500">.blog</span>
     </span>
   </a>
@@ -71,7 +76,7 @@ const tagHref = (categorySlug: string, tagSlug: string) => `/?category=${encodeU
                     {item.tags.map((tag) => {
                       const isTagActive = hasActiveTag && selectedTag === tag.slug;
                       return (
-                        <li>
+                        <li >
                           <a
                             href={tagHref(item.slug, tag.slug)}
                             aria-current={isTagActive ? 'page' : undefined}
@@ -92,7 +97,10 @@ const tagHref = (categorySlug: string, tagSlug: string) => `/?category=${encodeU
     <div class="flex items-center justify-center md:hidden">
       <Hamberger />
     </div>
-    <a href="/login" class="shrink-0 rounded-full border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">ចូល</a>
+    <!-- Setting Login -->
+    {user && <a href="/login" class="shrink-0 rounded-full border border-zinc-200 p-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">
+      <Settings size={16}/> 
+    </a>}
     <ThemeToggle />
   </div>
 </div>
@@ -140,3 +148,14 @@ const tagHref = (categorySlug: string, tagSlug: string) => `/?category=${encodeU
     );
   })}
 </nav>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Moulpali&display=swap');
+
+    .moulpali-regular {
+    font-family: "Moulpali", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    }
+
+</style>

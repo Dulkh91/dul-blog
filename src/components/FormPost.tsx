@@ -267,7 +267,7 @@ export default function FormPost({
 
   return (
     <form onSubmit={handleSubmit} className="grid h-full max-h-full grid-cols-6">
-      <div className="col-span-5">
+      <div className="col-span-6 md:col-span-5">
         <label htmlFor="post-title" className="sr-only">ចំណងជើងអត្ថបទ</label>
         <input
           id="post-title"
@@ -286,7 +286,7 @@ export default function FormPost({
         />
       </div>
 
-      <aside className="col-span-1 space-y-3 pl-4">
+      <aside className="col-span-6 md:col-span-1 space-y-3 pl-4">
         <div className="space-y-1">
           <label htmlFor="post-category" className="text-sm font-medium">Category</label>
           <select
@@ -309,9 +309,10 @@ export default function FormPost({
           {categoryError && <p role="alert" className="text-xs text-destructive">{categoryError}</p>}
         </div>
 
+          {/* Tag menu */}
         <div className="space-y-2">
           <p className="text-sm font-medium">Tags (ជ្រើសបានច្រើន)</p>
-          <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
+          <div className=" grid grid-cols-2 md:grid-cols-1 max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
             {availableTags.length ? availableTags.map((tag) => (
               <label key={tag.id} className="flex items-center gap-2 text-sm">
                 <input
@@ -328,7 +329,7 @@ export default function FormPost({
             )) : <p className="text-xs text-muted-foreground">មិនទាន់មាន tag ទេ។</p>}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col lg:flex-row gap-2">
             <input
               value={newTagName}
               onChange={(event) => setNewTagName(event.target.value)}

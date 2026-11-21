@@ -4,6 +4,7 @@ import { createSession } from '../../../../lib/session';
 import {
   getGoogleCredentials,
   getGoogleRedirectUri,
+  getAllowedGoogleEmails,
   GOOGLE_STATE_COOKIE,
   GOOGLE_VERIFIER_COOKIE,
   GOOGLE_RETURN_COOKIE,
@@ -71,19 +72,44 @@ export const GET: APIRoute = async ({ url, cookies }) => {
 
     stage = 'database';
     const email = profile.email.toLowerCase();
-    const existingGoogleUser = await prisma.user.findUnique({ where: { googleId: profile.sub } });
-    const invitedUser = existingGoogleUser ?? await prisma.user.findUnique({ where: { email } });
-    if (!invitedUser) return fail('not_allowed');
+    const isAllowlisted = getAllowedGoogleEmails().includes(email);
+    const user = await prisma.$transaction(async (tx) => {
+      // Serialize first-login provisioning so only one concurrent login becomes the initial admin.
+      await tx.authBootstrap.upsert({
+        where: { id: 'google-login-bootstrap' },
+        update: {},
+        create: { id: 'google-login-bootstrap' },
+      });
+      await tx.$queryRaw`SELECT "id" FROM "AuthBootstrap" WHERE "id" = 'google-login-bootstrap' FOR UPDATE`;
 
-    const user = await prisma.user.update({
-      where: { id: invitedUser.id },
-      data: {
-        email,
-        googleId: profile.sub,
-        name: profile.name ?? invitedUser.name,
-        avatar: profile.picture ?? invitedUser.avatar,
-      },
+      const existingGoogleUser = await tx.user.findUnique({ where: { googleId: profile.sub } });
+      const existingEmailUser = existingGoogleUser ?? await tx.user.findUnique({ where: { email } });
+      if (existingEmailUser) {
+        return tx.user.update({
+          where: { id: existingEmailUser.id },
+          data: {
+            email,
+            googleId: profile.sub,
+            name: profile.name ?? existingEmailUser.name,
+            avatar: profile.picture ?? existingEmailUser.avatar,
+          },
+        });
+      }
+
+      if (!isAllowlisted) return null;
+
+      const role = await tx.user.count() === 0 ? 'ADMIN' : 'EDITOR';
+      return tx.user.create({
+        data: {
+          email,
+          googleId: profile.sub,
+          name: profile.name,
+          avatar: profile.picture,
+          role,
+        },
+      });
     });
+    if (!user) return fail('not_allowed');
 
     stage = 'session';
     await createSession(user.id, cookies);

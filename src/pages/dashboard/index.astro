@@ -1,6 +1,8 @@
 ---
 import DashboardLayout from '../dashboard/DashboardLayout.astro'
 import Card from '@components/Card.astro';
+import Pagination from '@components/Pagination';
+
 
 export const prerender = false;
 
@@ -15,51 +17,184 @@ type PostProp = {
 
 interface PostListResponse {
   posts: Array<PostProp>;
+  pagination?: { page: number; limit: number; total: number; totalPages: number };
   error?: string;
 }
 
+interface CategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface TagOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+const selectedCategory = Astro.url.searchParams.get('category')?.trim() ?? '';
+const selectedTag = Astro.url.searchParams.get('tag')?.trim() ?? '';
+const selectedStatus = Astro.url.searchParams.get('status')?.trim() ?? '';
+const searchQuery = Astro.url.searchParams.get('q')?.trim() ?? '';
+const requestedPage = Number(Astro.url.searchParams.get('page') ?? 1);
+const currentPage = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+const pageSize = 10;
+
+let categories: CategoryOption[] = [];
+let tags: TagOption[] = [];
 let posts: PostListResponse['posts'] = [];
+let pagination: NonNullable<PostListResponse['pagination']> = {
+  page: currentPage, limit: pageSize, total: 0, totalPages: 0,
+};
 let error = '';
 
-try {
-  const response = await fetch(new URL('/api/posts/posts?limit=50&includeDrafts=true', Astro.url), {
-    headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
-  });
-  const data = await response.json() as PostListResponse;
-  
+const postsUrl = new URL('/api/posts/posts', Astro.url);
+postsUrl.searchParams.set('page', String(currentPage));
+postsUrl.searchParams.set('limit', String(pageSize));
+postsUrl.searchParams.set('includeDrafts', 'true');
+if (selectedCategory && selectedCategory !== 'all') {
+  postsUrl.searchParams.set('category', selectedCategory);
+}
+if (selectedTag && selectedTag !== 'all') {
+  postsUrl.searchParams.set('tag', selectedTag);
+}
+if (selectedStatus && selectedStatus !== 'all') {
+  postsUrl.searchParams.set('status', selectedStatus);
+}
+if (searchQuery) {
+  postsUrl.searchParams.set('q', searchQuery);
+}
 
-  if (!response.ok) {
+try {
+  const [catRes, tagRes, postRes] = await Promise.all([
+    fetch(new URL('/api/category/category', Astro.url)),
+    fetch(new URL('/api/tag/tag', Astro.url)),
+    fetch(postsUrl, {
+      headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+    }),
+  ]);
+
+  if (catRes.ok) {
+    const catData = await catRes.json();
+    categories = catData.categories ?? [];
+  }
+
+  if (tagRes.ok) {
+    const tagData = await tagRes.json();
+    tags = tagData.tags ?? [];
+  }
+
+  const data = (await postRes.json()) as PostListResponse;
+  if (!postRes.ok) {
     error = data.error ?? 'មិនអាចទាញយកអត្ថបទបានទេ។';
   } else {
     posts = data.posts ?? [];
+    pagination = data.pagination ?? pagination;
   }
 } catch {
   error = 'មិនអាចភ្ជាប់ទៅ API បានទេ។';
 }
 
+
 ---
 
 <DashboardLayout>
-    
   <section class="space-y-4">
-    <div>
-      <h1 class="text-2xl font-semibold">អត្ថបទទាំងអស់</h1>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold">អត្ថបទទាំងអស់</h1>
+        <p class="text-xs text-muted-foreground mt-1">
+          សរុប {pagination.total} អត្ថបទ
+          {searchQuery && ` (ស្វែងរក: "${searchQuery}")`}
+          {(selectedCategory || selectedTag || selectedStatus) && ' (តាម Filter)'}
+        </p>
+      </div>
+
+      <form method="GET" class="flex flex-wrap items-center gap-2">
+        {searchQuery && <input type="hidden" name="q" value={searchQuery} />}
+
+        <!-- Category Filter -->
+        <select
+          name="category"
+          class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+          onchange="this.form.submit()"
+        >
+          <option value="" class="font-semibold">ប្រភេទ (មើលទាំងអស់)</option>
+          {categories.map((cat) => (
+            <option value={cat.slug} selected={selectedCategory === cat.slug}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <!-- Tag Filter -->
+        <select
+          name="tag"
+          class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+          onchange="this.form.submit()"
+        >
+          <option value="" class="font-semibold">Tag (មើលទាំងអស់)</option>
+          {tags.map((t) => (
+            <option value={t.slug} selected={selectedTag === t.slug}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+
+        <!-- Status Filter: Private and Published -->
+        <select
+          name="status"
+          class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+          onchange="this.form.submit()"
+        >
+          <option value="" class="font-semibold">ស្ថានភាព (មើលទាំងអស់)</option>
+          <option value="published" selected={selectedStatus === 'published'}>បានផ្សាយ (Published)</option>
+          <option value="private" selected={selectedStatus === 'private'}>ឯកជន / ព្រាង (Private)</option>
+        </select>
+
+        {(selectedCategory || selectedTag || selectedStatus || searchQuery) && (
+          <a
+            href="/dashboard"
+            class="rounded-md border border-input bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            សម្អាត Filter / Search
+          </a>
+        )}
+      </form>
     </div>
 
     {error ? (
       <p role="alert" class="rounded-md border border-destructive/30 p-4 text-sm text-destructive">{error}</p>
     ) : posts.length ? (
       <div class="space-y-3 group">
-        {posts.map((post) => <Card 
+        {posts.map((post) => (
+          <Card 
             id={post.id} 
             title={post.title} 
             createdAt={post.createdAt} 
             category={post.category ? { ...post.category, createdAt: '' } : null}
             tags={post.tags}
-            published={post.published} />)}
+            published={post.published}
+          />
+        ))}
       </div>
     ) : (
-      <p class="rounded-md border p-4 text-sm text-muted-foreground">មិនទាន់មានអត្ថបទទេ។</p>
+      <p class="rounded-md border p-4 text-sm text-muted-foreground">
+        {(selectedCategory || selectedTag || selectedStatus || searchQuery)
+          ? 'មិនមានអត្ថបទត្រូវនឹងការស្វែងរក ឬ filter នេះទេ។'
+          : 'មិនទាន់មានអត្ថបទទេ។'}
+      </p>
     )}
+  </section>
+
+  <section>
+    <Pagination
+      client:load
+      currentPage={pagination.page}
+      totalPages={pagination.totalPages}
+      totalCount={pagination.total}
+      pageSize={pagination.limit}
+    />
   </section>
 </DashboardLayout>

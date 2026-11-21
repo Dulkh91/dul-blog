@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import PostFeed from '@components/PostFeed';
 import BackTop from '@components/BackTop';
+import { prisma } from '../lib/prisma';
 
 export const prerender = false;
 
@@ -24,6 +25,27 @@ interface PostResponse {
 const query = Astro.url.searchParams.get('q')?.trim() ?? '';
 const category = Astro.url.searchParams.get('category') ?? '';
 const tag = Astro.url.searchParams.get('tag') ?? '';
+const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+let selectedCategory: { id: string; name: string; slug: string; description: string | null } | null = null;
+let selectedTag: { id: string; name: string; slug: string; categories: { name: string }[] } | null = null;
+
+try {
+  if (category && category !== 'all') {
+    selectedCategory = await prisma.category.findFirst({
+      where: isUuid(category) ? { id: category } : { slug: category },
+      select: { id: true, name: true, slug: true, description: true },
+    });
+  }
+  if (tag && tag !== 'all') {
+    selectedTag = await prisma.tag.findFirst({
+      where: isUuid(tag) ? { id: tag } : { slug: tag },
+      select: { id: true, name: true, slug: true, categories: { select: { name: true } } },
+    });
+  }
+} catch (cause) {
+  console.error('Failed to load selected category/tag SEO metadata:', cause);
+}
 let posts: Post[] = [];
 let error = '';
 let totalPages = 1;
@@ -45,9 +67,35 @@ try {
   console.error('Failed to fetch posts:', cause);
   error = cause instanceof Error ? cause.message : 'Failed to fetch posts';
 }
+
+const tagCategoryName = selectedCategory?.name ?? selectedTag?.categories[0]?.name;
+const pageTitle = selectedTag
+  ? `${selectedTag.name}${tagCategoryName ? ` — ${tagCategoryName}` : ''}`
+  : selectedCategory?.name ?? (query ? `លទ្ធផលស្វែងរក: ${query}` : 'ទំព័រដើម');
+const pageDescription = selectedTag
+  ? `ស្វែងរកអត្ថបទអំពី ${selectedTag.name}${tagCategoryName ? ` ក្នុងប្រភេទ ${tagCategoryName}` : ''} នៅលើ DUL Blog។`
+  : selectedCategory?.description?.trim()
+    || (selectedCategory
+      ? `អានអត្ថបទ និងចំណេះដឹងថ្មីៗក្នុងប្រភេទ ${selectedCategory.name} នៅលើ DUL Blog។`
+      : query
+        ? `លទ្ធផលស្វែងរកអត្ថបទសម្រាប់ ${query} នៅលើ DUL Blog។`
+        : 'ស្វែងរកអត្ថបទថ្មីៗ ចំណេះដឹង និងគំនិតល្អៗជាភាសាខ្មែរនៅលើ DUL Blog។');
+const canonicalParams = new URLSearchParams();
+if (selectedCategory) canonicalParams.set('category', selectedCategory.slug);
+if (selectedTag) canonicalParams.set('tag', selectedTag.slug);
+const canonicalQuery = canonicalParams.toString();
+const canonicalPath = canonicalQuery ? `/?${canonicalQuery}` : '/';
+const seoKeywords = [selectedCategory?.name, selectedTag?.name].filter((value): value is string => Boolean(value));
+
 ---
 
-<Layout>
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  canonicalPath={canonicalPath}
+  keywords={seoKeywords}
+  noindex={Boolean(query) || (Boolean(category) && !selectedCategory) || (Boolean(tag) && !selectedTag)}
+>
   <div class="mx-auto w-full md:px-4 md:py-3">
     {error ? (
       <p role="alert" class="text-sm text-destructive">{error}</p>

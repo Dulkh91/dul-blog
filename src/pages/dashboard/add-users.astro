@@ -22,20 +22,13 @@ if (Astro.request.method === 'POST') {
   } else {
     try {
       const existing = await prisma.user.findUnique({ where: { email } });
-      if (existing?.role === 'ADMIN' && role === 'EDITOR') {
-        const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
-        if (adminCount <= 1) {
-          message = 'ត្រូវមាន Admin យ៉ាងតិចម្នាក់។ សូមដំឡើងអ្នកប្រើផ្សេងជា Admin ជាមុន។';
-          messageType = 'error';
-        }
+      if (existing) {
+        message = 'អ៊ីមែលនេះមានក្នុងបញ្ជីរួចហើយ។ សូមកែពីតារាងខាងក្រោម។';
+        messageType = 'error';
       }
 
       if (!message) {
-        await prisma.user.upsert({
-          where: { email },
-          update: { role, ...(name ? { name } : {}) },
-          create: { email, name: name || null, role },
-        });
+        await prisma.user.create({ data: { email, name: name || null, role } });
         return Astro.redirect('/dashboard/add-users?saved=1', 303);
       }
     } catch (error) {
@@ -49,7 +42,7 @@ if (Astro.request.method === 'POST') {
 if (Astro.url.searchParams.get('saved') === '1') message = 'បានរក្សាទុកអ្នកប្រើក្នុង database។';
 
 const users = await prisma.user.findMany({
-  select: { id: true, name: true, email: true, role: true, createdAt: true },
+  select: { id: true, name: true, email: true, role: true, googleId: true },
   orderBy: [{ role: 'asc' }, { email: 'asc' }],
 });
 ---
@@ -90,18 +83,61 @@ const users = await prisma.user.findMany({
     <div class="overflow-x-auto rounded-xl border">
       <table class="w-full text-left text-sm">
         <thead class="bg-muted/60">
-          <tr><th class="px-4 py-3">ឈ្មោះ</th><th class="px-4 py-3">អ៊ីមែល</th><th class="px-4 py-3">Role</th></tr>
+          <tr><th class="px-4 py-3">ឈ្មោះ</th><th class="px-4 py-3">អ៊ីមែល</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">សកម្មភាព</th></tr>
         </thead>
         <tbody class="divide-y">
-          {users.map((user) => (
+          {users.map((user) => {
+            const formId = `edit-user-${user.id}`;
+            return (
             <tr>
-              <td class="px-4 py-3">{user.name ?? '—'}</td>
-              <td class="px-4 py-3">{user.email}</td>
-              <td class="px-4 py-3"><span class="rounded-full border px-2 py-1 text-xs">{user.role}</span></td>
+              <td class="px-4 py-3"><input form={formId} name="name" value={user.name ?? ''} class="w-36 rounded border bg-background px-2 py-1" aria-label={`ឈ្មោះ ${user.email}`} /></td>
+              <td class="px-4 py-3"><input form={formId} name="email" type="email" value={user.email} readonly={Boolean(user.googleId)} class="w-56 rounded border bg-background px-2 py-1 read-only:opacity-60" aria-label={`អ៊ីមែល ${user.email}`} /></td>
+              <td class="px-4 py-3">
+                <select form={formId} name="role" value={user.role} class="rounded border bg-background px-2 py-1" aria-label={`Role ${user.email}`}>
+                  <option value="EDITOR">Editor</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+                {user.googleId && <p class="mt-1 text-xs text-muted-foreground">Google linked</p>}
+              </td>
+              <td class="px-4 py-3">
+                <form id={formId} class="edit-user-form" data-user-id={user.id}>
+                  <button type="submit" class="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">កែប្រែ</button>
+                  <p class="edit-user-message mt-1 text-xs" role="status"></p>
+                </form>
+              </td>
             </tr>
-          ))}
+          );})}
         </tbody>
       </table>
     </div>
   </section>
 </DashboardLayout>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('.edit-user-form').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = form.querySelector<HTMLElement>('.edit-user-message');
+      const payload = Object.fromEntries(new FormData(form).entries());
+
+      try {
+        const response = await fetch('/api/admin/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: form.dataset.userId, ...payload }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error ?? 'មិនអាចកែអ្នកប្រើបានទេ។');
+        if (message) {
+          message.textContent = 'បានកែប្រែ។';
+          message.className = 'edit-user-message mt-1 text-xs text-emerald-700';
+        }
+      } catch (error) {
+        if (message) {
+          message.textContent = error instanceof Error ? error.message : 'មិនអាចកែអ្នកប្រើបានទេ។';
+          message.className = 'edit-user-message mt-1 text-xs text-red-700';
+        }
+      }
+    });
+  });
+</script>

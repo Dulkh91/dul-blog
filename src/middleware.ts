@@ -1,9 +1,11 @@
 import { defineMiddleware } from 'astro:middleware';
 import { getSessionUser } from './lib/session';
+import type { UserProp } from '@components/types/userType';
 
 function requiresAuthentication(request: Request, pathname: string, url: URL) {
   const method = request.method.toUpperCase();
   if (pathname.startsWith('/dashboard')) return true;
+  if (pathname === '/api/admin/users') return true;
   if (pathname === '/api/posts/posts') {
     return method !== 'GET' || url.searchParams.has('id') || url.searchParams.get('includeDrafts') === 'true';
   }
@@ -13,23 +15,34 @@ function requiresAuthentication(request: Request, pathname: string, url: URL) {
 }
 
 function requiresAdmin(pathname: string) {
-  return pathname === '/dashboard/add-users' || pathname.startsWith('/dashboard/add-users/');
+  return pathname === '/dashboard/add-users'
+    || pathname.startsWith('/dashboard/add-users/')
+    || pathname === '/api/admin/users';
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url, cookies } = context;
-  if (!requiresAuthentication(request, url.pathname, url)) return next();
+  const authenticationRequired = requiresAuthentication(request, url.pathname, url);
+  // let user: Awaited<ReturnType<typeof getSessionUser>> = null;
+  let user: UserProp | null = null;
 
   try {
-    const user = await getSessionUser(cookies);
-    if (user) {
-      if (requiresAdmin(url.pathname) && user.role !== 'ADMIN') {
-        return context.redirect('/dashboard?error=admin_required', 302);
-      }
-      return next();
-    }
+    user = await getSessionUser(cookies);
   } catch (error) {
     console.error('Authentication check failed:', error);
+  }
+
+  context.locals.user = user;
+  if (!authenticationRequired) return next();
+
+  if (user) {
+    if (requiresAdmin(url.pathname) && user.role !== 'ADMIN') {
+      if (url.pathname.startsWith('/api/')) {
+        return Response.json({ error: 'Admin role required.' }, { status: 403 });
+      }
+      return context.redirect('/dashboard?error=admin_required', 302);
+    }
+    return next();
   }
 
   if (url.pathname.startsWith('/api/')) {
