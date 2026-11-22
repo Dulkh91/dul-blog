@@ -8,8 +8,24 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@components/components/ui/sidebar"
-import { FileText, LayoutDashboard, ListCollapse, UserRoundGroup } from "lucide-react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./components/ui/collapsible"
+import { 
+  FileText, 
+  LayoutDashboard, 
+  ListCollapse, 
+  UserRoundGroup,
+  ChevronDown,
+  UserLock
+} from "lucide-react"
 import { AvatarName } from "./AvatarName"
 import type { UserProp } from "./types/userType"
 
@@ -19,6 +35,12 @@ const itemSidebar = [
   
   { name: "Categories", url: "/dashboard/categories", icon: ListCollapse },
   { name: "Add-user", url: "/dashboard/add-users", icon: UserRoundGroup },
+]
+
+const dulInfo = [
+  {name: "Create Transactions", url: "/dul/expandtrack-dashboard/add-transactions"},
+  {name: "Create Category", url: "/dul/expandtrack-dashboard/add-category"}
+
 ]
 
 export function AppSidebar({
@@ -31,19 +53,31 @@ export function AppSidebar({
   currentPath?: string
 }) {
   const [currentPath, setCurrentPath] = useState(initialPath ?? "")
+  const isDulInfoActive = currentPath.startsWith("/dul")
+  const [isDulInfoOpen, setIsDulInfoOpen] = useState(initialPath?.startsWith("/dul") ?? false)
 
   useEffect(() => {
     if (initialPath) {
       setCurrentPath(initialPath)
+      if (initialPath.startsWith("/dul")) {
+        setIsDulInfoOpen(true)
+      }
     }
   }, [initialPath])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setCurrentPath(window.location.pathname)
+      if (window.location.pathname.startsWith("/dul")) {
+        setIsDulInfoOpen(true)
+      }
 
       const handleLocationChange = () => {
-        setCurrentPath(window.location.pathname)
+        const path = window.location.pathname
+        setCurrentPath(path)
+        if (path.startsWith("/dul")) {
+          setIsDulInfoOpen(true)
+        }
       }
 
       window.addEventListener("popstate", handleLocationChange)
@@ -109,15 +143,74 @@ export function AppSidebar({
                       />
                       <span className="group-data-[collapsible=icon]:hidden">
                         {i.name}
-                      </span>
+                      </span >
                     </a>
                   </SidebarMenuItem>
                 )
               })}
+              {/* Dul Info Dropdown Menu using shadcn ui Collapsible */}
+              <Collapsible
+                open={isDulInfoOpen}
+                onOpenChange={setIsDulInfoOpen}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem className="border-t border-zinc-200 dark:border-zinc-700/60 pt-1 mt-1">
+                  <CollapsibleTrigger
+                    render={
+                      <SidebarMenuButton
+                        tooltip="Dul Info"
+                        isActive={isDulInfoActive}
+                        className="w-full flex items-center justify-between cursor-pointer"
+                      />
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserLock 
+                        className={`h-4 w-4 shrink-0 ${
+                          isDulInfoActive
+                            ? "text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground/70"
+                        }`}
+                      />
+
+                      <span className="group-data-[collapsible=icon]:hidden font-medium">
+                        Dul Info
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${
+                        isDulInfoOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        {dulInfo.map(dul=>(
+                          <SidebarMenuSubButton
+                            key={dul.name}
+                            href={dul.url}
+                            onClick={() => setCurrentPath(dul.url)}
+                            isActive={isItemActive(dul.url)}
+                            className={
+                              isItemActive("/expandtrack-dashboard")
+                                ? "bg-zinc-400/25 font-semibold text-sidebar-accent-foreground shadow-xs"
+                                : ""
+                            }
+                          >
+                          <span>{dul.name}</span>
+                        </SidebarMenuSubButton>
+                        ))}
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible> 
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-      </SidebarContent>
+      </SidebarContent>{/*  End Dul infor */}
       <SidebarFooter className="border-t p-4 text-xs text-muted-foreground">
         <AvatarName userName={userName} />
       </SidebarFooter>

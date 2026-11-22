@@ -5,7 +5,11 @@ import type { UserProp } from '@components/types/userType';
 function requiresAuthentication(request: Request, pathname: string, url: URL) {
   const method = request.method.toUpperCase();
   if (pathname.startsWith('/dashboard')) return true;
+  if (pathname.startsWith('/dul/')) return true;
   if (pathname === '/api/admin/users') return true;
+  if (pathname === '/api/firebase/expandtracks/workspace') return method !== 'GET';
+  if (/^\/api\/workspaces\/[^/]+\/transactions$/.test(pathname)) return true;
+  if (/^\/api\/firebase\/expandtracks\/[^/]+\/transactions$/.test(pathname)) return true;
   if (pathname === '/api/posts/posts') {
     return method !== 'GET' || url.searchParams.has('id') || url.searchParams.get('includeDrafts') === 'true';
   }
