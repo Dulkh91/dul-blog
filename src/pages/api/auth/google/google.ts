@@ -40,7 +40,10 @@ export const GET: APIRoute = ({ url, cookies }) => {
       prompt: 'select_account',
     }).toString();
 
-    return Response.redirect(authorizationUrl, 302);
+    return new Response(null, {
+      status: 302,
+      headers: { Location: authorizationUrl.toString() },
+    });
   } catch (error) {
     console.error('Could not start Google OAuth:', error);
     return new Response('Google sign-in is not configured.', { status: 503 });

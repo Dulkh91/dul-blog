@@ -2,6 +2,7 @@
 ---
 import '../../styles/global.css'
 import { DashboardShell } from '@components/dashboard-shell';
+import Analytics from '@vercel/analytics/astro'
 
 export const prerender = false;
 
@@ -37,7 +38,7 @@ const currentStatus = Astro.url.searchParams.get('status')?.trim() ?? '';
     >
       <slot />
     </DashboardShell>
-    
+    <Analytics/>
 </body>
 </html>
 

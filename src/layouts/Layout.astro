@@ -2,6 +2,7 @@
 import '../styles/global.css'
 import Navbar from '@components/Navbar.astro'
 import  Footer  from '@components/Footer.astro';
+import Analytics from '@vercel/analytics/astro'
 
 interface Props {
   title?: string;
@@ -74,6 +75,8 @@ const imageUrl = image ? new URL(image, Astro.url.origin).toString() : undefined
 		<main class="mx-auto my-3 w-full max-w-5xl flex-1 px-2.5 md:px-5">
 			<slot />
 		</main>
+
+		<Analytics/>
 
 		<footer class="border-t border-zinc-200/80 dark:border-zinc-800/80 py-8">
 			<Footer/>

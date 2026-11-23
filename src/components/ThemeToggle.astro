@@ -10,22 +10,33 @@
 </button>
 
 <script>
-  import { theme, toggleTheme } from '../stores/theme';
-
   const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
 
   if (button) {
     const moon = button.querySelector<SVGElement>('[data-theme-icon="light"]');
     const sun = button.querySelector<SVGElement>('[data-theme-icon="dark"]');
 
-    theme.subscribe((mode) => {
-      document.documentElement.classList.toggle('dark', mode === 'dark');
-      button.setAttribute('aria-label', mode === 'dark' ? 'ប្តូរទៅ light mode' : 'ប្តូរទៅ dark mode');
-      button.title = mode === 'dark' ? 'ប្តូរទៅ light mode' : 'ប្តូរទៅ dark mode';
-      moon?.classList.toggle('hidden', mode === 'dark');
-      sun?.classList.toggle('hidden', mode !== 'dark');
-    });
+    const syncButton = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const label = isDark ? 'ប្តូរទៅ light mode' : 'ប្តូរទៅ dark mode';
 
-    button.addEventListener('click', toggleTheme);
+      button.setAttribute('aria-label', label);
+      button.title = label;
+      moon?.classList.toggle('hidden', isDark);
+      sun?.classList.toggle('hidden', !isDark);
+    };
+
+    syncButton();
+    button.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+
+      try {
+        localStorage.setItem('blog-theme', isDark ? 'dark' : 'light');
+      } catch {
+        // Theme still works for this page when storage is unavailable.
+      }
+
+      syncButton();
+    });
   }
 </script>
