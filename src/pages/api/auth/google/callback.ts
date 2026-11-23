@@ -33,7 +33,10 @@ export const GET: APIRoute = async ({ url, cookies }) => {
   };
   const fail = (reason = 'google') => {
     clearOAuthCookies();
-    return Response.redirect(new URL(`/login?error=${reason}`, url), 302);
+    return new Response(null, {
+      status: 302,
+      headers: { Location: new URL(`/login?error=${reason}`, url).toString() },
+    });
   };
 
   const code = url.searchParams.get('code');
@@ -116,7 +119,11 @@ export const GET: APIRoute = async ({ url, cookies }) => {
     const returnTo = cookies.get(GOOGLE_RETURN_COOKIE)?.value ?? '/dashboard';
     const returnUrl = new URL(returnTo, url.origin);
     clearOAuthCookies();
-    return Response.redirect(returnUrl.origin === url.origin ? returnUrl : new URL('/dashboard', url), 302);
+    const destination = returnUrl.origin === url.origin ? returnUrl : new URL('/dashboard', url);
+    return new Response(null, {
+      status: 302,
+      headers: { Location: destination.toString() },
+    });
   } catch (error) {
     console.error(`Google OAuth callback failed during ${stage}:`, error);
     return fail(stage);
