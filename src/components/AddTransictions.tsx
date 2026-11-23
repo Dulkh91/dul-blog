@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
-
+import { formatDateTimeLocal } from "@components/lib/date";
 type Workspace = {
   id: string;
   name: string;
@@ -11,6 +11,7 @@ type Props = {
   workspaces: Workspace[];
   initialWorkspaceId?: string;
 };
+
 
 
 export function AddTransiction({ userId, workspaces, initialWorkspaceId = "" }: Props) {
@@ -88,23 +89,24 @@ export function AddTransiction({ userId, workspaces, initialWorkspaceId = "" }: 
     }
   }
 
-  const fieldClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  const fieldClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
   const labelClass = "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
 
   if (workspaces.length === 0) {
     return (
-      <section className="mx-auto max-w-3xl rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+      <section className="mx-auto  max-w-3xl rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900">
         មិនទាន់មាន workspace ទេ។ សូមបង្កើត workspace ជាមុនសិន។
         <a className="ml-2 font-semibold underline" href="/dul/expand-track">ទៅកាន់ Workspaces</a>
       </section>
     );
   }
 
+//   const date = new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' }).format(new Date(createdAt));
+ const date = new Intl.DateTimeFormat('km-KH', { dateStyle: 'medium' })
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
+    <form onSubmit={handleSubmit} className=" space-y-3">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">បញ្ចូល Transaction</h1>
-        <p className="mt-1 text-sm text-zinc-500">បំពេញព័ត៌មានចំណូល ឬចំណាយខាងក្រោម។</p>
+        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">បញ្ចូល Transaction</h1>
       </div>
 
       <label className={labelClass}>
@@ -116,9 +118,9 @@ export function AddTransiction({ userId, workspaces, initialWorkspaceId = "" }: 
         </select>
       </label>
 
-      <div className="space-y-4">
+      <div className=" space-y-4">
         {rowIds.map((rowId, index) => (
-          <fieldset key={rowId} data-transaction-row className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700 sm:p-5">
+          <section key={rowId} data-transaction-row className=" space-y-4 w-full rounded-xl border border-zinc-200 p-1 md:p-4 dark:border-zinc-700 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Transaction #{index + 1}</p>
               {rowIds.length > 1 && (
@@ -131,19 +133,20 @@ export function AddTransiction({ userId, workspaces, initialWorkspaceId = "" }: 
               )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="  grid grid-cols-2 md:grid-cols-8 w-full space-x-2 ">
               <label className={labelClass}>ចំណងជើង<input className={fieldClass} name="title" placeholder="ឧ. ទិញអង្ករ" maxLength={120} required /></label>
-              <label className={labelClass}>ប្រភេទ<select className={fieldClass} name="type" defaultValue="EXPENSE"><option value="EXPENSE">ចំណាយ (EXPENSE)</option><option value="INCOME">ចំណូល (INCOME)</option></select></label>
+              <label className={`${labelClass} shrink-0 `}>ប្រភេទ<select className={`${fieldClass} `} name="type" defaultValue="EXPENSE"><option value="EXPENSE">ចំណាយ (EXPENSE)</option><option value="INCOME">ចំណូល (INCOME)</option></select></label>
               <label className={labelClass}>បរិមាណ<input className={fieldClass} name="quantity" type="number" min="0" step="any" defaultValue="1" required /></label>
               <label className={labelClass}>ឯកតា<input className={fieldClass} name="unit" placeholder="ឧ. kg, ដុំ" maxLength={30} required /></label>
               <label className={labelClass}>ចំនួនទឹកប្រាក់<input className={fieldClass} name="amount" type="number" min="0" step="any" placeholder="50000" required /></label>
               <label className={labelClass}>រូបិយប័ណ្ណ<input key={`${workspaceId}-${rowId}`} className={fieldClass} name="currency" defaultValue={selectedWorkspace?.currency || "KHR"} maxLength={8} required /></label>
               <label className={labelClass}>Category ID<input className={fieldClass} name="categoryId" placeholder="ឧ. food" required /></label>
-              <label className={labelClass}>ថ្ងៃ និងម៉ោង<input className={fieldClass} name="occurredAt" type="datetime-local" defaultValue={new Date().toISOString().slice(0, 16)} required /></label>
+              <label className={`${labelClass} shrink-0 `}>ថ្ងៃ និងម៉ោង<input className={fieldClass} name="occurredAt" type="datetime-local" defaultValue={ formatDateTimeLocal(new Date()) } required /></label>
             </div>
+                {/* new Date().toISOString().slice(0, 16) */}
 
-            <label className={labelClass}>កំណត់ចំណាំ<textarea className={fieldClass} name="note" rows={2} placeholder="បន្ថែមព័ត៌មានលម្អិត (មិនចាំបាច់)" maxLength={1000} /></label>
-          </fieldset>
+            <label className={labelClass}>កំណត់ចំណាំ<textarea className={fieldClass} name="note" rows={1} placeholder="បន្ថែមព័ត៌មានលម្អិត (មិនចាំបាច់)" maxLength={1000} /></label>
+          </section>
         ))}
       </div>
 

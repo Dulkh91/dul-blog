@@ -51,3 +51,24 @@ export function formatPostDate(date: Date | string | number) {
   return format(d, 'dd MMMM yyyy', { locale: km });
 }
 
+
+export function formatDateTimeLocal (date: Date | string | number)  {
+  const pad = (n:any) => n.toString().padStart(2, '0');
+  
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Phnom_Penh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(date instanceof Date ? date : new Date(date));
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find(p => p.type === type)?.value ?? '';
+  
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+};
+

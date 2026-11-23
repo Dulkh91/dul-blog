@@ -1,0 +1,32 @@
+---
+import ExpandTrackDashboard from './index.astro'
+import { AddTransiction } from './AddTransictions';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+let workspaces: { id: string; name: string; currency: string }[] = [];
+let loadError = '';
+
+if (user) {
+  
+  } catch (error) {
+    
+  }
+
+
+const initialWorkspaceId = Astro.url.searchParams.get('workspaceId') ?? '';
+---
+
+<ExpandTrackDashboard>
+  {loadError ? (
+    <p class="mx-auto max-w-3xl rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{loadError}</p>
+  ) : (
+    <AddTransiction
+      client:load
+      userId={user?.id ?? ''}
+      workspaces={workspaces}
+      initialWorkspaceId={initialWorkspaceId}
+    />
+  )}
+</ExpandTrackDashboard>

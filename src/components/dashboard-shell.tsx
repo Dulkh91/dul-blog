@@ -82,7 +82,7 @@ export function DashboardShell({
           </form>
 
         </header>
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-1.5 md:p-6">
           {children}
         </main>
       </SidebarInset>
