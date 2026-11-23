@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const databaseUrl = import.meta.env.DATABASE_URL ?? process.env.DATABASE_URL;
 
