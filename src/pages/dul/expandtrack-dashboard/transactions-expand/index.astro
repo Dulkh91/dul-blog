@@ -2,6 +2,8 @@
 import  DashboardLayout from '../../../dashboard/DashboardLayout.astro';
 import { AddTransiction } from '../../../../components/AddTransictions';
 
+import  MyTransaction from './MyTransaction.astro';
+
 export const prerender = false;
 
 const user = Astro.locals.user
@@ -47,4 +49,8 @@ const initialWorkspaceId = Astro.url.searchParams.get('workspaceId') ?? '';
       initialWorkspaceId={initialWorkspaceId}
     />
   )}
+
+  <hr class="my-6 border-zinc-200 dark:border-zinc-800" />
+  <MyTransaction workspaceId={initialWorkspaceId || workspaces[0]?.id} />
+
 </DashboardLayout>
