@@ -1,0 +1,12 @@
+---
+import  DashboardLayout from "../../../dashboard/DashboardLayout.astro";
+import CreateWorkspaceCategory from "../../../../components/CreateWorkspaceCategory";
+
+export const prerender = false;
+
+const workspaceId = Astro.url.searchParams.get("workspaceId") ?? "";
+---
+
+<DashboardLayout>
+  <CreateWorkspaceCategory client:load workspaceId={workspaceId} />
+</DashboardLayout>

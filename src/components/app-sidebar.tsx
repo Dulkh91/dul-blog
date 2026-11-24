@@ -38,8 +38,8 @@ const itemSidebar = [
 ]
 
 const dulInfo = [
-  {name: "Create Transactions", url: "/dul/expandtrack-dashboard/add-transactions"},
-  {name: "Create Category", url: "/dul/expandtrack-dashboard/add-category"}
+  {name: "Transactions", url: "/dul/expandtrack-dashboard/transactions-expand"},
+  {name: "Category", url: "/dul/expandtrack-dashboard/category-expand"}
 
 ]
 

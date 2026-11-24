@@ -23,7 +23,7 @@ let workspaces: Workspace[] = [];
 let fetchError: string | null = null;
 
 try {
-  const apiUrl = new URL('/api/firebase/expandtracks/workspace', Astro.url);
+  const apiUrl = new URL('/api/workspaces/workspace', Astro.url);
   if (currentUser?.id) {
     apiUrl.searchParams.set('ownerUid', currentUser.id);
   }
@@ -252,6 +252,9 @@ try {
   </div>
 </DulLayout>
 
+
+
+
 <script>
   const toggleBtn = document.getElementById('toggle-create-btn');
   const closeBtn = document.getElementById('close-create-btn');
@@ -304,7 +307,7 @@ try {
     if (messageEl) messageEl.classList.add('hidden');
 
     try {
-      const response = await fetch('/api/firebase/expandtracks/workspace', {
+      const response = await fetch('/api/workspaces/workspace', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
