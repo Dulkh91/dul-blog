@@ -1,0 +1,9 @@
+---
+import  DashboardLayout from "../../../dashboard/DashboardLayout.astro";
+import {AddExpandTransaction} from '../transactions/AddExpandTransaction'
+export const prerender = false
+---
+
+<DashboardLayout>
+    <AddExpandTransaction client:load/>
+</DashboardLayout>

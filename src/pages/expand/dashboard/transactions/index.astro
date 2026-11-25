@@ -1,0 +1,103 @@
+---
+import DashboardLayout from "../../../dashboard/DashboardLayout.astro";
+import { getDocs, collection, Timestamp } from "firebase/firestore";
+import { db } from "../../../../lib/firebase";
+
+export const prerender = false
+interface Transaction{
+    id: string;
+    title: string;
+    type: string;
+    currency: string;
+    amount: number;
+    category: string;
+    note: string;
+    createdAt: string;
+}
+// interface TransactionResponse{
+//     transactions?: Transaction[]
+//     errorMessage?: string;
+// }
+
+let transactions: Transaction[] = []
+let errorMssage = ""
+
+function timestampToIso(value: Timestamp | Date | string): string {
+    if (value instanceof Timestamp) return value.toDate().toISOString();
+    if (value instanceof Date) return value.toISOString();
+    return new Date(value).toISOString();
+}
+
+try {
+    const snapshot = await getDocs(collection(db, "transactions"));
+    transactions = snapshot.docs.map((tran)=>{
+        const data = tran.data();
+        return{
+            id: tran.id,
+            title: data.title as string,
+            type: data.type as string,
+            amount: data.amount as number,
+            currency: data.currency as string,
+            note: data.note as string,
+            category: data.category as string,
+            createdAt: timestampToIso(data.createdAt)
+        }
+    });
+
+} catch (error) {
+    console.error("Failed to connect database ")
+}
+
+---
+
+<DashboardLayout>
+    {errorMssage ?(<div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+      ⚠️ <strong>កំហុស:</strong> {errorMssage}
+    </div>):(transactions.length === 0? (<div class="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+      មិនទាន់មាន transaction ណាមួយនៅក្នុង Workspace នេះនៅឡើយទេ។
+    </div>
+    ):(
+        <div class="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+      <table class="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
+        <thead class="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <tr>
+            <th class="px-4 py-3">ចំណងជើង</th>
+            <th class="px-4 py-3">ប្រភេទ</th>
+            <th class="px-4 py-3">ចំនួនទឹកប្រាក់</th>
+            <th class="px-4 py-3">Category</th>
+            <th class="px-4 py-3">កាលបរិច្ឆេទ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
+          {transactions.map((t) => (
+            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+              <td class="px-4 py-3 font-medium text-zinc-900 dark:text-white">
+                {t.title}
+              </td>
+              <td class="px-4 py-3">
+                <span class={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
+                  t.type === 'INCOME'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                }`}>
+                  {t.type}
+                </span>
+              </td>
+              <td class="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">
+                {t.type === 'INCOME' ? '+' : '-'}{t.amount.toLocaleString()} {t.currency}
+              </td>
+              <td class="px-4 py-3 text-xs text-zinc-500">
+                {t.category || '-'}
+              </td>
+              <td class="px-4 py-3 text-xs text-zinc-500">
+                {t.createdAt ? new Date(t.createdAt).toLocaleString('km-KH') : '-'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    ))}
+</DashboardLayout>
+
+
