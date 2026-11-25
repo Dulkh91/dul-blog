@@ -1,15 +1,63 @@
-import { useEffect,useRef,useState } from "react"
-import {collection, getDocs } from "firebase/firestore"
+import React, { useEffect, useRef, useState } from "react"
+import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../../../lib/firebase"
 import { SelectField } from "./SelectField"
+
+interface AmountInputProps {
+    className?: string;
+    name?: string;
+    placeholder?: string;
+    required?: boolean;
+}
+
+export function AmountInput({
+    className,
+    name = "amount",
+    placeholder = "50,000",
+    required = true,
+}: AmountInputProps) {
+    const [displayValue, setDisplayValue] = useState("");
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const inputVal = e.target.value;
+        if (!inputVal) {
+            setDisplayValue("");
+            return;
+        }
+
+        // ដក comma និងតួអក្សរផ្សេងៗ ទុកតែលេខ និង dot
+        const raw = inputVal.replace(/[^\d.]/g, "");
+        const parts = raw.split(".");
+        const intFormatted = parts[0] ? Number(parts[0]).toLocaleString("en-US") : "";
+        const formatted = parts.length > 1 ? `${intFormatted}.${parts.slice(1).join("")}` : intFormatted;
+
+        setDisplayValue(formatted);
+    };
+
+    return (
+        <input
+            type="text"
+            inputMode="decimal"
+            className={className}
+            name={name}
+            value={displayValue}
+            onChange={handleChange}
+            placeholder={placeholder}
+            required={required}
+        />
+    );
+}
 
 export function AddExpandTransaction (){
     const [rowIds, setRowIds] = useState([1])
     const nexRowId = useRef(2)
 
     const [category, setCategory] = useState<{ id: string; category: string }[]>()
-    // const [isCreateNew, setIsCreateNew] = useState(false)
     const [valueCategories, setValueCategories] = useState<Record<number, string>>({})
+
+    const [busy, setBusy] = useState(false)
+    const [noteMessage, setNoteMessage] = useState<{message: string; error: boolean}| null>(null)
+   
 
     useEffect(()=>{
         const fetchData = async ()=>{
@@ -26,13 +74,72 @@ export function AddExpandTransaction (){
         }
         fetchData()
     },[])
+    
+
+    const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>)=>{
+        event.preventDefault()
+
+        const formElement = event.currentTarget
+
+        const form = event.currentTarget
+        const rowElements = Array.from(form.querySelectorAll<HTMLElement>("[data-transaction-row]"));
+        const payloads = rowElements.map((row)=>{
+            const value = (name: string)=> row.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> (`[name="${name}"]`)?.value ?? "";
+            return {
+                title: value("title").trim(),
+                type: value("type"),
+                amount: Number(value("amount").replace(/,/g, "")) || 0,
+                currency: value("currency").trim().toUpperCase(),
+                category: value("category").trim(),
+                note: value("note").trim()
+            }
+        });
+
+        if(payloads.some((payload)=> !payload.title)){
+            setNoteMessage({message: "សូមបញ្ចូលមុខទំនិញនៅក្នុង form",error: true})
+            return;
+        };
+
+        setBusy(true)
+        setNoteMessage(null)
+
+        try {
+            let saved = 1
+            for(const payload of payloads){
+                const response = await fetch("/api/expandtrack/transactions",{
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+             })
+             const result = await response.json().catch(()=>({}))
+             if(!response.ok){
+                throw new Error(`${result.error || "មិនអាចរក្សាទុក transaction បានទេ។"} (រក្សាទុកបាន ${saved}/${payloads.length})`)
+             }
+             saved += 1;
+            }
+
+            formElement.reset()
+            setRowIds([nexRowId.current++])
+            setNoteMessage({ message: `បានរក្សាទុក transaction ${saved} បានជោគជ័យ។`, error: false })
+            
+        } catch (error) {
+            setNoteMessage({
+                    message: error instanceof Error ? error.message : "មិនអាចទាក់ទងទៅ server បានទេ។",
+                    error: true,
+                })
+        }finally{
+            setBusy(false)
+        }
+
+    }
+
 
     const labelClass = "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
     const fieldClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
     return (
-        <form className=" space-y-3">
+        <form className=" space-y-3" onSubmit={handleSubmit}>
             {rowIds.map((rowId, index)=>(
-                <section key={rowId} className=" rounded-xl border border-zinc-200 p-4 space-y-2">
+                <section key={rowId} data-transaction-row className=" rounded-xl border border-zinc-200 p-4 space-y-2">
                     <div className=" flex items-center">
                         <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Transaction #{index+1}</p>
                         {rowIds.length > 1 &&(
@@ -48,7 +155,7 @@ export function AddExpandTransaction (){
                     <div className=" grid grid-cols-5 gap-3">
                         <label className={labelClass}>ចំណងជើង<input type="text" className={fieldClass} placeholder="ឈ្មោះទំនិញ" name="title" maxLength={120} required /></label>
                         <label className={`${labelClass} shrink-0 `}>ប្រភេទ<select className={`${fieldClass} `} name="type" defaultValue="EXPENSE"><option value="EXPENSE">ចំណាយ (EXPENSE)</option><option value="INCOME">ចំណូល (INCOME)</option></select></label>
-                        <label className={labelClass}>ចំនួនទឹកប្រាក់<input className={fieldClass} name="amount" type="number" min="0" step="any" placeholder="50000" required /></label>
+                        <label className={labelClass}>ចំនួនទឹកប្រាក់<AmountInput className={fieldClass} name="amount" placeholder="50,000" required /></label>
                         <label className={labelClass}>រូបិយប័ណ្ណ<input  className={fieldClass} name="currency" defaultValue={"៛"} maxLength={8} required /></label>
                         {/* Create category by retrieve db */}
                             {category &&
@@ -66,7 +173,16 @@ export function AddExpandTransaction (){
             </section>
             ))}
             <button type="button" onClick={ ()=>setRowIds(current=> [...current, nexRowId.current++])}>+ Add Form</button>
+            {noteMessage && (
+                <p role="status" className={`rounded-lg px-3 py-2 text-sm ${noteMessage.error ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300"}`}>
+                    {noteMessage.message}
+                </p>
+            )}
+            <div>
+                <button type="submit" disabled={busy || category?.length === 0}>
+                    {busy? "កំពុងរក្សាទុក…" : "រក្សាទុក Transaction"}
+                </button>
+            </div>
         </form>
     )
 }
-``

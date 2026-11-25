@@ -2,7 +2,8 @@
 import DashboardLayout from "../../../dashboard/DashboardLayout.astro";
 import { getDocs, collection, Timestamp } from "firebase/firestore";
 import { db } from "../../../../lib/firebase";
-
+import { formatDateTime } from "@components/lib/date"
+ 
 export const prerender = false
 interface Transaction{
     id: string;
@@ -14,22 +15,22 @@ interface Transaction{
     note: string;
     createdAt: string;
 }
-// interface TransactionResponse{
-//     transactions?: Transaction[]
-//     errorMessage?: string;
-// }
+
 
 let transactions: Transaction[] = []
 let errorMssage = ""
 
-function timestampToIso(value: Timestamp | Date | string): string {
+function timestampToIso(value: Timestamp | Date | string | undefined): string {
+  if (!value) return "";
     if (value instanceof Timestamp) return value.toDate().toISOString();
     if (value instanceof Date) return value.toISOString();
-    return new Date(value).toISOString();
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
 try {
-    const snapshot = await getDocs(collection(db, "transactions"));
+  // Firestore orderBy omits documents without a createdAt field.
+  const snapshot = await getDocs(collection(db, "transactions"));
     transactions = snapshot.docs.map((tran)=>{
         const data = tran.data();
         return{
@@ -42,10 +43,17 @@ try {
             category: data.category as string,
             createdAt: timestampToIso(data.createdAt)
         }
+    }).sort((a, b) => {
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+  
+
 } catch (error) {
-    console.error("Failed to connect database ")
+  console.error("Failed to connect database", error);
+  errorMssage = "មិនអាចទាញយក transaction បានទេ។";
 }
 
 ---
@@ -90,7 +98,7 @@ try {
                 {t.category || '-'}
               </td>
               <td class="px-4 py-3 text-xs text-zinc-500">
-                {t.createdAt ? new Date(t.createdAt).toLocaleString('km-KH') : '-'}
+                {t.createdAt ? formatDateTime(t.createdAt) : '-'}
               </td>
             </tr>
           ))}

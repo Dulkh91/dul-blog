@@ -20,6 +20,7 @@ export const POST: APIRoute = async ({request})=>{
         const title = typeof body.title === "string"? body.title.trim() : "";
         const type = typeof body.type === "string"? body.type.trim(): "EXPENSE";
         const amount = typeof body.amount === "number"? body.amount : (Number(body.amount) || 0);
+        const currency = typeof body.currency === "string"? body.currency.trim(): ""
         const category = typeof body.category === "string"? body.category.trim(): "";
         const note = typeof body.note === "string"? body.note.trim(): "";
 
@@ -27,6 +28,7 @@ export const POST: APIRoute = async ({request})=>{
             title,
             type,
             amount,
+            currency,
             category,
             note,
             createdAt: serverTimestamp()

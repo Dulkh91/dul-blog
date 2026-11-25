@@ -1,10 +1,11 @@
 import { format, formatDistanceToNow } from 'date-fns';
+import { formatInTimeZone} from 'date-fns-tz'
 import { km, enUS } from 'date-fns/locale';
 
 type Locale = 'km' | 'en';
 
 const locales = { km, enUS };
-
+const TIME_ZONE = 'Asia/Phnom_Penh';
 export function formatDate(
   date: Date | string | number,
   formatStr: string = 'dd MMMM yyyy',
@@ -52,23 +53,21 @@ export function formatPostDate(date: Date | string | number) {
 }
 
 
-export function formatDateTimeLocal (date: Date | string | number)  {
-  const pad = (n:any) => n.toString().padStart(2, '0');
-  
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Phnom_Penh',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
+// សម្រាប់ <input type="datetime-local" />
+export function formatDateTimeLocal(date: Date | string | number): string {
+  const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+  return formatInTimeZone(d, TIME_ZONE, "yyyy-MM-dd'T'HH:mm");
+}
+
+// សម្រាប់បង្ហាញជាអក្សរខ្មែរ (ឧ. "22 វិច្ឆិកា 2026 ៖ 10:45")
+export function formatDateTime(
+  date: Date | string | number,
+  formatStr: string = "dd MMMM yyyy '-' HH:mm",
+  locale: Locale = 'km'
+): string {
+  const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+  return formatInTimeZone(d, TIME_ZONE, formatStr, {
+    locale: locales[locale === 'en' ? 'enUS' : 'km'],
   });
-  
-  const parts = formatter.formatToParts(date instanceof Date ? date : new Date(date));
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find(p => p.type === type)?.value ?? '';
-  
-  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
-};
+}
 
