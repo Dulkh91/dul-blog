@@ -1,0 +1,190 @@
+
+<form id="edit-form" class="mt-4 space-y-3.5">
+          <input type="hidden" name="id" id="edit-id" />
+
+          <div>
+            <label class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">ចំណងជើង *</label>
+            <input
+              type="text"
+              name="title"
+              id="edit-title"
+              required
+              class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">ប្រភេទ</label>
+              <select
+                name="type"
+                id="edit-type"
+                class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="EXPENSE">ចំណាយ (EXPENSE)</option>
+                <option value="INCOME">ចំណូល (INCOME)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">ចំនួនទឹកប្រាក់ *</label>
+              <input
+                type="number"
+                name="amount"
+                id="edit-amount"
+                min="0"
+                step="any"
+                required
+                class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Category</label>
+              <input
+                type="text"
+                name="category"
+                id="edit-category"
+                class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">រូបិយប័ណ្ណ</label>
+              <input
+                type="text"
+                name="currency"
+                id="edit-currency"
+                class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">កំណត់ចំណាំ</label>
+            <textarea
+              name="note"
+              id="edit-note"
+              rows="2"
+              class="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            ></textarea>
+          </div>
+
+          <div id="edit-error" class="hidden text-xs text-red-600 bg-red-50 dark:bg-red-950/40 p-2.5 rounded-lg border border-red-200 dark:border-red-900"></div>
+
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+            <button
+              type="button"
+              id="cancel-modal-btn"
+              class="px-4 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors cursor-pointer"
+            >
+              បោះបង់
+            </button>
+            <button
+              type="submit"
+              id="save-modal-btn"
+              class="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+            >
+              រក្សាទុកការកែប្រែ
+            </button>
+          </div>
+        </form>
+
+
+<script>
+
+  // Handle Edit Modal
+  const modal = document.getElementById('edit-modal');
+  const editForm = document.getElementById('edit-form') as HTMLFormElement | null;
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  const cancelModalBtn = document.getElementById('cancel-modal-btn');
+  const saveModalBtn = document.getElementById('save-modal-btn') as HTMLButtonElement | null;
+  const editError = document.getElementById('edit-error');
+
+  const editId = document.getElementById('edit-id') as HTMLInputElement | null;
+  const editTitle = document.getElementById('edit-title') as HTMLInputElement | null;
+  const editType = document.getElementById('edit-type') as HTMLSelectElement | null;
+  const editAmount = document.getElementById('edit-amount') as HTMLInputElement | null;
+  const editCategory = document.getElementById('edit-category') as HTMLInputElement | null;
+  const editCurrency = document.getElementById('edit-currency') as HTMLInputElement | null;
+  const editNote = document.getElementById('edit-note') as HTMLTextAreaElement | null;
+
+  const openModal = () => modal?.classList.remove('hidden');
+  
+  const closeModal = () => {
+    modal?.classList.add('hidden');
+    if (editError) {
+      editError.textContent = '';
+      editError.classList.add('hidden');
+    }
+  };
+
+  closeModalBtn?.addEventListener('click', closeModal);
+  cancelModalBtn?.addEventListener('click', closeModal);
+
+  document.querySelectorAll<HTMLButtonElement>('.btn-edit').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      
+      if (!editId || !editTitle || !editType || !editAmount || !editCategory || !editCurrency || !editNote) return;
+
+      editId.value = btn.dataset.id || '';
+      editTitle.value = btn.dataset.title || '';
+      editType.value = btn.dataset.type || 'EXPENSE';
+      editAmount.value = btn.dataset.amount || '0';
+      editCategory.value = btn.dataset.category || '';
+      editCurrency.value = btn.dataset.currency || '៛';
+      editNote.value = btn.dataset.note || '';
+
+      openModal();
+    });
+  });
+
+  editForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!editId || !editTitle || !saveModalBtn) return;
+
+    const payload = {
+      id: editId.value,
+      title: editTitle.value.trim(),
+      type: editType?.value || 'EXPENSE',
+      amount: Number(editAmount?.value) || 0,
+      category: editCategory?.value.trim() || '',
+      currency: editCurrency?.value.trim() || '៛',
+      note: editNote?.value.trim() || '',
+    };
+
+    saveModalBtn.disabled = true;
+    saveModalBtn.textContent = 'កំពុងរក្សាទុក...';
+    if (editError) editError.classList.add('hidden');
+
+    try {
+      const response = await fetch('/api/expandtrack/transactions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        closeModal();
+        window.location.reload();
+      } else {
+        if (editError) {
+          editError.textContent = result.error || 'មានបញ្ហាក្នុងការកែប្រែ';
+          editError.classList.remove('hidden');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      if (editError) {
+        editError.textContent = 'មិនអាចទាក់ទងទៅ Server បានទេ។';
+        editError.classList.remove('hidden');
+      }
+    } finally {
+      saveModalBtn.disabled = false;
+      saveModalBtn.textContent = 'រក្សាទុកការកែប្រែ';
+    }
+  });
+</script>

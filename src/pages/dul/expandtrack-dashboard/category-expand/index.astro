@@ -1,0 +1,38 @@
+---
+import  DashboardLayout from "../../../dashboard/DashboardLayout.astro";
+import CreateWorkspaceCategory from "../../../../components/CreateWorkspaceCategory";
+
+export const prerender = false;
+interface Category{
+    id:string;
+    name: string;
+    createdAt: string
+}
+interface CategoryResponce {
+    category?: Category[]
+    error?: string 
+}
+
+const workspaceId = Astro.url.searchParams.get("workspaceId") ?? "";
+
+const user = Astro.locals.user
+
+try {
+    if(!user) return
+    const responce = await fetch( new URL(`/api/workspaces/${encodeURIComponent(user.id)}/category`, Astro.url))
+    const result = await responce.json() as CategoryResponce
+    if(!responce.ok) throw new Error("Failed to fetch category")
+    console.log(result.category)
+
+} catch (error) {
+    console.error(error)
+}
+
+---
+
+<DashboardLayout>
+  <CreateWorkspaceCategory client:load workspaceId={workspaceId} />
+  <hr/>
+  <h1>Hello </h1>
+
+</DashboardLayout>

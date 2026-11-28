@@ -213,14 +213,6 @@ function Sidebar({
       data-variant={variant}
       data-side={side}
       data-slot="sidebar"
-      style={
-        {
-          "--sidebar-width":
-            state === "collapsed" && collapsible === "icon"
-              ? SIDEBAR_WIDTH_ICON
-              : SIDEBAR_WIDTH,
-        } as React.CSSProperties
-      }
     >
       {/* This is what handles the sidebar gap on desktop */}
       <div

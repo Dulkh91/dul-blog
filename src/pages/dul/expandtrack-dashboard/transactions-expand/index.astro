@@ -1,0 +1,56 @@
+---
+import  DashboardLayout from '../../../dashboard/DashboardLayout.astro';
+import { AddTransiction } from '../../../../components/AddTransictions';
+
+import  MyTransaction from './MyTransaction.astro';
+
+export const prerender = false;
+
+const user = Astro.locals.user
+let workspaces: { id: string; name: string; currency: string }[] = [];
+let loadError = '';
+
+if (user) {
+  try {
+    const apiUrl = new URL('/api/workspaces/workspace', Astro.url);
+    apiUrl.searchParams.set('ownerUid', user.id);
+    const response = await fetch(apiUrl, {
+      headers: { cookie: Astro.request.headers.get('cookie') ?? '' },
+    });
+    const result = await response.json();
+    if (response.ok) {
+      workspaces = (result.workspaces ?? result.workspace ?? [])
+        .filter((workspace: any) => typeof workspace.id === 'string')
+        .map((workspace: any) => ({
+          id: workspace.id,
+          name: workspace.name ?? 'Workspace',
+          currency: workspace.currency ?? 'KHR',
+        }));
+    } else {
+      loadError = result.error ?? 'មិនអាចទាញយក workspace បានទេ។';
+    }
+  } catch (error) {
+    console.error('Failed to load workspaces for transaction form:', error);
+    loadError = 'មិនអាចទាញយក workspace បានទេ។';
+  }
+}
+
+const initialWorkspaceId = Astro.url.searchParams.get('workspaceId') ?? '';
+---
+
+<DashboardLayout>
+  {loadError ? (
+    <p class="mx-auto max-w-3xl rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{loadError}</p>
+  ) : (
+    <AddTransiction
+      client:load
+      userId={user?.id ?? ''}
+      workspaces={workspaces}
+      initialWorkspaceId={initialWorkspaceId}
+    />
+  )}
+
+  <hr class="my-6 border-zinc-200 dark:border-zinc-800" />
+  <MyTransaction workspaceId={initialWorkspaceId || workspaces[0]?.id} />
+
+</DashboardLayout>

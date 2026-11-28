@@ -1,0 +1,124 @@
+---
+export const prerender = false;
+
+interface Props {
+  workspaceId?: string;
+}
+
+const { workspaceId: propWorkspaceId } = Astro.props;
+const queryWorkspaceId = Astro.url.searchParams.get('workspaceId') ?? '';
+const targetWorkspaceId = propWorkspaceId || queryWorkspaceId;
+// const targetWorkspaceId = propWorkspaceId || queryWorkspaceId || 'dfFC59m0CUkXwhQHmU0D';
+
+interface Transaction {
+  id: string;
+  title: string;
+  quantity: number;
+  amount: number;
+  currency: string;
+  type: string;
+  categoryId: string;
+  note: string;
+  createdAt: string;
+  occurredAt: string;
+  unit: string;
+  userId: string;
+}
+
+interface TransactionRes {
+  transactions?: Transaction[];
+  error?: string;
+}
+
+let transactions: Transaction[] = [];
+let errorMessage = "";
+
+if (targetWorkspaceId) {
+    // console.log(targetWorkspaceId)
+  try {
+    const apiUrl = new URL(`/api/workspaces/${targetWorkspaceId}/transactions`, Astro.url);
+    const response = await fetch(apiUrl.toString(), {
+      headers: {
+        cookie: Astro.request.headers.get('cookie') ?? '',
+      },
+    });
+
+    const result = (await response.json()) as TransactionRes;
+
+    if (!response.ok) {
+      errorMessage = result.error || `HTTP error! STATUS: ${response.status}`;
+    } else {
+      transactions = result.transactions ?? [];
+    }
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    errorMessage = error instanceof Error ? error.message : "មិនអាចទាញយកទិន្នន័យបានទេ។";
+  }
+} else {
+  errorMessage = "សូមជ្រើសរើស Workspace ជាមុនសិន។";
+}
+
+---
+
+<div class="mt-8 space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+      បញ្ជី Transactions ({transactions.length})
+    </h2>
+    <span class="text-xs font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded">
+      Workspace: {targetWorkspaceId}
+    </span>
+  </div>
+
+  {errorMessage ? (
+    <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+      ⚠️ <strong>កំហុស:</strong> {errorMessage}
+    </div>
+  ) : transactions.length === 0 ? (
+    <div class="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+      មិនទាន់មាន transaction ណាមួយនៅក្នុង Workspace នេះនៅឡើយទេ។
+    </div>
+  ) : (
+    <div class="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+      <table class="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
+        <thead class="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <tr>
+            <th class="px-4 py-3">ចំណងជើង</th>
+            <th class="px-4 py-3">ប្រភេទ</th>
+            <th class="px-4 py-3">ចំនួនទឹកប្រាក់</th>
+            <th class="px-4 py-3">Category</th>
+            <th class="px-4 py-3">កាលបរិច្ឆេទ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
+          {transactions.map((t) => (
+            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+              <td class="px-4 py-3 font-medium text-zinc-900 dark:text-white">
+                {t.title}
+                {t.unit && <span class="text-xs text-zinc-400 ml-1">({t.quantity} {t.unit})</span>}
+              </td>
+              <td class="px-4 py-3">
+                <span class={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
+                  t.type === 'INCOME'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                }`}>
+                  {t.type}
+                </span>
+              </td>
+              <td class="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">
+                {t.type === 'INCOME' ? '+' : '-'}{t.amount.toLocaleString()} {t.currency}
+              </td>
+              <td class="px-4 py-3 text-xs text-zinc-500">
+                {t.categoryId || '-'}
+              </td>
+              <td class="px-4 py-3 text-xs text-zinc-500">
+                {t.occurredAt ? new Date(t.occurredAt).toLocaleString('km-KH') : '-'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>

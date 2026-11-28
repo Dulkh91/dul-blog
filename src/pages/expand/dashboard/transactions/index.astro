@@ -1,0 +1,272 @@
+---
+import DashboardLayout from "../../../dashboard/DashboardLayout.astro";
+import { getDocs, collection, Timestamp } from "firebase/firestore";
+import { db } from "../../../../lib/firebase";
+import { formatDateTime } from "@components/lib/date"
+import  FormEdit  from "./FormEdit.astro";
+import { AddExpandTransaction } from "./AddExpandTransaction";
+import { 
+  MoreHorizontalIcon,
+  SquarePen,
+  X,
+} from 'lucide-react'
+
+ 
+export const prerender = false
+interface Transaction{
+    id: string;
+    title: string;
+    type: string;
+    currency: string;
+    amount: number;
+    amountInCents: boolean;
+    category: string;
+    note: string;
+    createdAt: string;
+}
+
+
+let transactions: Transaction[] = []
+let errorMssage = ""
+
+function timestampToIso(value: Timestamp | Date | string | undefined): string {
+  if (!value) return "";
+    if (value instanceof Timestamp) return value.toDate().toISOString();
+    if (value instanceof Date) return value.toISOString();
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function getDisplayAmount(transaction: Transaction): number {
+  return transaction.amountInCents ? transaction.amount / 100 : transaction.amount;
+}
+
+try {
+  // Firestore orderBy omits documents without a createdAt field.
+  const snapshot = await getDocs(collection(db, "transactions"));
+    transactions = snapshot.docs.map((tran)=>{
+        const data = tran.data();
+        return{
+            id: tran.id,
+            title: data.title as string,
+            type: data.type as string,
+            amount: data.amount as number,
+            amountInCents: data.amountInCents === true,
+            currency: data.currency as string,
+            note: data.note as string,
+            category: data.category as string,
+            createdAt: timestampToIso(data.createdAt)
+        }
+    }).sort((a, b) => {
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+  
+
+} catch (error) {
+  console.error("Failed to connect database", error);
+  errorMssage = "មិនអាចទាញយក transaction បានទេ។";
+}
+
+---
+
+<DashboardLayout>
+    {errorMssage ?(<div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+      ⚠️ <strong>កំហុស:</strong> {errorMssage}
+    </div>):(transactions.length === 0? (<div class="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+      មិនទាន់មាន transaction ណាមួយនៅឡើយទេ។
+    </div>
+    ):(
+      <div class=" rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+        <table class="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
+          <thead class="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            <tr>
+              <th class="px-4 py-3">ចំណងជើង</th>
+              <th class="px-4 py-3 md:w-auto w-20">ប្រភេទ</th>
+              <th class="px-4 py-3">ចំនួនទឹកប្រាក់</th>
+              <th class="px-4 py-3">Category</th>
+              <th class="px-4 py-3">កាលបរិច្ឆេទ</th>
+              <th class="px-4 py-3 text-center">សកម្មភាព</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700" id="transactions-tbody">
+            {transactions.map((t) => (
+              <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors" data-row-id={t.id}>
+                <td class="px-4 py-3 font-medium text-zinc-900 dark:text-white" data-cell="title">
+                  {t.title}
+                </td>
+                <td class="py-3" data-cell="type">
+                  <span class={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
+                    t.type === 'INCOME'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                  }`}>
+                    {t.type}
+                  </span>
+                </td>
+                <td class="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100 " data-cell="amount">
+                  {t.type === 'INCOME' ? '+' : '-'}
+                  {getDisplayAmount(t).toLocaleString(
+                    "en-US",
+                    t.amountInCents
+                      ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      : undefined,
+                  )} {t.currency}
+                </td>
+                <td class="px-4 py-3 text-xs text-zinc-500" data-cell="category ">
+                  {t.category || '-'}
+                </td>
+                <td class="px-4 py-3 text-xs text-zinc-500">
+                  {t.createdAt ? formatDateTime(t.createdAt) : '-'}
+                </td>
+                <td class="px-4 py-3">
+                  <details class="relative">
+                    <summary class="flex cursor-pointer list-none items-center justify-center rounded p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="សកម្មភាព">
+                      <MoreHorizontalIcon size={16}/>
+                    </summary>
+                    <div class="absolute right-0 z-10 mt-1 min-w-36 rounded-md border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                      <button
+                        type="button"
+                        class="btn-edit flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                        title="កែប្រែ"
+                        data-id={t.id}
+                        data-title={t.title}
+                        data-type={t.type}
+                        data-amount={getDisplayAmount(t)}
+                        data-currency={t.currency}
+                        data-category={t.category}
+                        data-note={t.note || ''}
+                      >
+                        <SquarePen size={14}/>
+                        <span>កែប្រែ</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-delete flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                        title="លុប"
+                        data-id={t.id}
+                        data-title={t.title}
+                      >
+                        <X size={14}/>
+                        <span>លុប</span>
+                      </button>
+                    </div>
+                  </details>
+
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ))}
+
+    <!-- Add transaction modal -->
+    <div
+      id="add-transaction-modal"
+      class="fixed inset-0 z-50  hidden bg-black/50 backdrop-blur-xs items-center justify-center p-4"
+      aria-hidden="true"
+    >
+      <div class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-zinc-200 dark:border-zinc-800">
+          <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">បញ្ចូល Transaction</h3>
+          <button type="button" id="close-add-transaction-modal" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-lg leading-none cursor-pointer" aria-label="បិទ">✕</button>
+        </div>
+        <AddExpandTransaction client:load />
+      </div>
+    </div>
+
+    <!-- Edit Modal Dialog -->
+    <div
+      id="edit-modal"
+      class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+
+      <div class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-lg w-full p-6 animate-in fade-in zoom-in duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+          <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <span>✏️</span> កែប្រែ Transaction
+          </h3>
+          <button type="button" id="close-modal-btn" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-lg leading-none cursor-pointer">
+            ✕
+          </button>
+        </div>
+           <FormEdit/>
+
+      </div>
+    </div>
+</DashboardLayout>
+
+
+<script>
+  import { isAddTransaction } from "../../../../stores/store";
+
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const clickedDetails = target.closest('tbody details');
+    document.querySelectorAll<HTMLDetailsElement>('tbody details[open]').forEach((details) => {
+      if (details !== clickedDetails) details.open = false;
+    });
+  });
+
+  const addTransactionModal = document.getElementById('add-transaction-modal');
+  const closeAddTransactionModal = document.getElementById('close-add-transaction-modal');
+
+  const syncAddTransactionModal = (isOpen: boolean) => {
+    if (!addTransactionModal) return;
+    addTransactionModal.classList.toggle('hidden', !isOpen);
+    addTransactionModal.classList.toggle('flex', isOpen);
+    addTransactionModal.setAttribute('aria-hidden', String(!isOpen));
+  };
+
+  isAddTransaction.subscribe(syncAddTransactionModal);
+  closeAddTransactionModal?.addEventListener('click', () => isAddTransaction.set(false));
+  addTransactionModal?.addEventListener('click', (event) => {
+    if (event.target === addTransactionModal) isAddTransaction.set(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') isAddTransaction.set(false);
+  });
+
+  // Handle Delete
+  document.querySelectorAll<HTMLButtonElement>('.btn-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const title = btn.dataset.title || 'Transaction នេះ';
+
+      if (!id) return;
+      if (!confirm(`តើអ្នកពិតជាចង់លុប "${title}" មែនទេ?`)) return;
+
+      btn.disabled = true;
+      try {
+        const response = await fetch(`/api/expandtrack/transactions?id=${id}`, {
+          method: 'DELETE',
+        });
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          const row = document.querySelector(`[data-row-id="${id}"]`);
+          if (row) {
+            row.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+            setTimeout(() => row.remove(), 300);
+          }
+        } else {
+          alert(`កំហុស៖ ${result.error || 'មិនអាចលុបបានទេ។'}`);
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('មិនអាចទាក់ទងទៅ Server បានទេ។');
+        btn.disabled = false;
+      }
+    });
+  });
+
+
+</script>
+
+

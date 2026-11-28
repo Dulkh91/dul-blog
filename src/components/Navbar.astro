@@ -2,6 +2,7 @@
 import ThemeToggle from './ThemeToggle.astro';
 import Hamberger from './Hamberger.astro';
 import { Settings } from 'lucide-react';
+import HomeLink from './HomeLink.astro';
 
 
 interface Category {
@@ -41,13 +42,9 @@ const {user} = Astro.locals
 ---
 
 <div class="mx-auto flex min-h-16 max-w-5xl md:w-full justify-center gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between">
-  <a href="/" class="group flex shrink-0 items-center gap-2.5 focus:outline-none">
-    <span class="h-2.5 w-2.5 rounded-full bg-indigo-500 transition-transform group-hover:scale-125"></span>
-    <span class="text-base font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-lg moulpali-regular">
-      ឌុល<span class="text-sm font-normal text-zinc-400 dark:text-zinc-500">.blog</span>
-    </span>
-  </a>
-
+  <!-- Home Link -->
+  <HomeLink/>
+  
   <div class="ml-auto flex items-center space-x-2">
     <div class="hidden md:flex">
       <nav aria-label="Categories" class="flex min-w-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
@@ -148,14 +145,3 @@ const {user} = Astro.locals
     );
   })}
 </nav>
-
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Moulpali&display=swap');
-
-    .moulpali-regular {
-    font-family: "Moulpali", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-    }
-
-</style>

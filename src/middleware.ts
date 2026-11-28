@@ -5,7 +5,13 @@ import type { UserProp } from '@components/types/userType';
 function requiresAuthentication(request: Request, pathname: string, url: URL) {
   const method = request.method.toUpperCase();
   if (pathname.startsWith('/dashboard')) return true;
+  if (pathname.startsWith('/dul/')) return true;
   if (pathname === '/api/admin/users') return true;
+  if (pathname === '/api/firebase/expandtracks/workspace') return method !== 'GET';
+  if(pathname.startsWith('/expand')) return true
+  if (pathname === '/api/expandtrack/transactions') return method !== 'GET';
+  if (/^\/api\/workspaces\/[^/]+\/transactions$/.test(pathname)) return method !== 'GET';
+  if (/^\/api\/firebase\/expandtracks\/[^/]+\/transactions$/.test(pathname)) return method !== 'GET';
   if (pathname === '/api/posts/posts') {
     return method !== 'GET' || url.searchParams.has('id') || url.searchParams.get('includeDrafts') === 'true';
   }
@@ -17,7 +23,8 @@ function requiresAuthentication(request: Request, pathname: string, url: URL) {
 function requiresAdmin(pathname: string) {
   return pathname === '/dashboard/add-users'
     || pathname.startsWith('/dashboard/add-users/')
-    || pathname === '/api/admin/users';
+    || pathname === '/api/admin/users'
+    || pathname.startsWith('/expand/dashboard')
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -37,6 +44,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (user) {
     if (requiresAdmin(url.pathname) && user.role !== 'ADMIN') {
+        
       if (url.pathname.startsWith('/api/')) {
         return Response.json({ error: 'Admin role required.' }, { status: 403 });
       }
