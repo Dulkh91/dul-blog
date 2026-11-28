@@ -1,0 +1,19 @@
+---
+import DashboardLayout from "../../../dashboard/DashboardLayout.astro";
+import { TransactionReport } from "./TransactionReport";
+
+export const prerender = false;
+---
+
+<DashboardLayout>
+  <div class="space-y-2">
+    <div class="flex items-center gap-2 pb-1">
+      <span class="text-xl">📋</span>
+      <div>
+        <h1 class="text-base font-bold text-zinc-900 dark:text-zinc-100">របាយការណ៍ Transaction</h1>
+      </div>
+    </div>
+
+    <TransactionReport client:load />
+  </div>
+</DashboardLayout>

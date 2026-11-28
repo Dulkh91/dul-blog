@@ -12,6 +12,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarTrigger
 } from "@components/components/ui/sidebar"
 import {
   Collapsible,
@@ -38,8 +39,8 @@ const itemSidebar = [
 ]
 
 const dulInfo = [
-  {name: "Transactions", url: "/dul/expandtrack-dashboard/transactions-expand"},
-  {name: "Category", url: "/dul/expandtrack-dashboard/category-expand"}
+  {name: "Transactions", url: "/expand/dashboard/transactions"},
+  {name: "Transactions Report", url: "/expand/dashboard/report"}
 
 ]
 
@@ -109,9 +110,15 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b px-4 py-3">
-        <a href="/" className="group-data-[collapsible=icon]:hidden">
-          DUL Blog
-        </a>
+        <div className=" flex items-center justify-between">
+            <a href="/" className="group-data-[collapsible=icon]:hidden">
+              DUL Blog
+            </a>
+            {/* Desktop screen */}
+            <div >
+               <SidebarTrigger/>
+            </div>
+        </div>
 
       </SidebarHeader>
       <SidebarContent>

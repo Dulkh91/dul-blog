@@ -2,51 +2,8 @@ import React, { useEffect, useRef, useState } from "react"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../../../lib/firebase"
 import { SelectField } from "./SelectField"
+import { AmountInput } from "./AmountInput"
 
-interface AmountInputProps {
-    className?: string;
-    name?: string;
-    placeholder?: string;
-    required?: boolean;
-}
-
-export function AmountInput({
-    className,
-    name = "amount",
-    placeholder = "50,000",
-    required = true,
-}: AmountInputProps) {
-    const [displayValue, setDisplayValue] = useState("");
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const inputVal = e.target.value;
-        if (!inputVal) {
-            setDisplayValue("");
-            return;
-        }
-
-        // ដក comma និងតួអក្សរផ្សេងៗ ទុកតែលេខ និង dot
-        const raw = inputVal.replace(/[^\d.]/g, "");
-        const parts = raw.split(".");
-        const intFormatted = parts[0] ? Number(parts[0]).toLocaleString("en-US") : "";
-        const formatted = parts.length > 1 ? `${intFormatted}.${parts.slice(1).join("")}` : intFormatted;
-
-        setDisplayValue(formatted);
-    };
-
-    return (
-        <input
-            type="text"
-            inputMode="decimal"
-            className={className}
-            name={name}
-            value={displayValue}
-            onChange={handleChange}
-            placeholder={placeholder}
-            required={required}
-        />
-    );
-}
 
 export function AddExpandTransaction (){
     const [rowIds, setRowIds] = useState([1])
@@ -62,15 +19,20 @@ export function AddExpandTransaction (){
     useEffect(()=>{
         const fetchData = async ()=>{
             const snapshot = await getDocs(collection(db,"transactions"));
-            const result = snapshot.docs.map(d=>{
-                  const data = d.data()
-                  return {
-                    id: d.id,
-                    category: data.category as string
-                  }
-                })
-
-            setCategory(result)
+                        const categories = new Set<string>()
+                        snapshot.docs.forEach((doc)=>{
+                                const value = doc.data().category
+                                if (typeof value === "string" && value.trim()) {
+                                        categories.add(value.trim())
+                                }
+                        })
+                        
+                        setCategory(Array.from(categories, (value)=>({ id: value, category: value })))
+                        // setCategory(Array.from(categories).map(value=>({
+                        //     id: value,
+                        //     category: value
+                        // })))
+                        
         }
         fetchData()
     },[])
@@ -152,11 +114,11 @@ export function AddExpandTransaction (){
                             </button>
                         )}
                     </div>
-                    <div className=" grid grid-cols-5 gap-3">
+                    <div className=" grid grid-cols-4 gap-3 align-middle">
                         <label className={labelClass}>ចំណងជើង<input type="text" className={fieldClass} placeholder="ឈ្មោះទំនិញ" name="title" maxLength={120} required /></label>
                         <label className={`${labelClass} shrink-0 `}>ប្រភេទ<select className={`${fieldClass} `} name="type" defaultValue="EXPENSE"><option value="EXPENSE">ចំណាយ (EXPENSE)</option><option value="INCOME">ចំណូល (INCOME)</option></select></label>
-                        <label className={labelClass}>ចំនួនទឹកប្រាក់<AmountInput className={fieldClass} name="amount" placeholder="50,000" required /></label>
-                        <label className={labelClass}>រូបិយប័ណ្ណ<input  className={fieldClass} name="currency" defaultValue={"៛"} maxLength={8} required /></label>
+                        <label className={labelClass}>ចំនួនទឹកប្រាក់<AmountInput  name="amount" placeholder="50,000" required /></label>
+                        {/* <label className={labelClass}>រូបិយប័ណ្ណ<input  className={fieldClass} name="currency" defaultValue={"៛"} maxLength={8} required /></label> */}
                         {/* Create category by retrieve db */}
                             {category &&
                                 <SelectField
@@ -172,14 +134,16 @@ export function AddExpandTransaction (){
                 <label className={labelClass}>កំណត់ចំណាំ<textarea className={fieldClass} name="note" rows={1} placeholder="បន្ថែមព័ត៌មានលម្អិត (មិនចាំបាច់)" maxLength={1000} /></label>
             </section>
             ))}
-            <button type="button" onClick={ ()=>setRowIds(current=> [...current, nexRowId.current++])}>+ Add Form</button>
+            <button type="button" 
+                className="px-4 py-2 text-xs font-medium text-white bg-pink-600 hover:bg-pink-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                onClick={ ()=>setRowIds(current=> [...current, nexRowId.current++])}>+ Add Form</button>
             {noteMessage && (
                 <p role="status" className={`rounded-lg px-3 py-2 text-sm ${noteMessage.error ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300"}`}>
                     {noteMessage.message}
                 </p>
             )}
-            <div>
-                <button type="submit" disabled={busy || category?.length === 0}>
+            <div className=" w-full flex justify-end">
+                <button type="submit" disabled={busy || category?.length === 0} className=" ml-auto px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50 ">
                     {busy? "កំពុងរក្សាទុក…" : "រក្សាទុក Transaction"}
                 </button>
             </div>

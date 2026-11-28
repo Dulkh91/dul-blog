@@ -7,6 +7,8 @@ import {
 import { AppSidebar } from "@components/app-sidebar"
 import { Search, X } from "lucide-react"
 import type { UserProp } from "@components/types/userType"
+import { isAddTransaction } from "../stores/store"
+
 
 export function DashboardShell({
   children,
@@ -28,10 +30,27 @@ export function DashboardShell({
   currentStatus?: string
 }) {
   const [searchValue, setSearchValue] = useState(initialSearch)
+  const [path, setPath] = useState(currentPath ?? "")
 
   useEffect(() => {
     setSearchValue(initialSearch)
   }, [initialSearch])
+
+  useEffect(() => {
+    if (currentPath) setPath(currentPath)
+    if (typeof window !== "undefined") {
+      setPath(window.location.pathname)
+      const handleLocationChange = () => setPath(window.location.pathname)
+      window.addEventListener("popstate", handleLocationChange)
+      document.addEventListener("astro:page-load", handleLocationChange)
+      return () => {
+        window.removeEventListener("popstate", handleLocationChange)
+        document.removeEventListener("astro:page-load", handleLocationChange)
+      }
+    }
+  }, [currentPath])
+
+  const isTransactionsPage = path?.replace(/\/+$/, "") === "/expand/dashboard/transactions"
 
   const handleClear = () => {
     setSearchValue("")
@@ -41,15 +60,20 @@ export function DashboardShell({
       window.location.href = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "")
     }
   }
+
+  const handleButtonAddTransaction = () => {
+    isAddTransaction?.set?.(true)
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar userName={userName} userRole={userRole} currentPath={currentPath} />
       <SidebarInset>
         <header className="flex h-14 items-center gap-2 border-b px-4">
-          <SidebarTrigger />
-          <span className="text-sm font-medium hidden sm:inline">Dashboard</span>
-          
-          <form
+          <SidebarTrigger className={" md:hidden"}/>
+          <span className="text-sm font-medium hidden sm:inline">Dashboard {currentPath?.startsWith("/expand") && "Expand"}</span>
+          {!isTransactionsPage &&(
+            <form
             method="GET"
             action="/dashboard"
             role="search"
@@ -80,7 +104,20 @@ export function DashboardShell({
               </button>
             )}
           </form>
-
+          )}
+          
+          {/* Button Add transaction - បង្ហាញតែពេលស្ថិតនៅលើ /expand/dashboard/transactions */}
+          {isTransactionsPage && (
+            <div className=" ml-auto">
+              <button
+                type="button"
+                onClick={handleButtonAddTransaction}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors cursor-pointer"
+              >
+                + transaction
+              </button>
+            </div>
+          )}
         </header>
         <main className="flex-1 p-1.5 md:p-6">
           {children}
