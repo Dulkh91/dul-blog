@@ -156,6 +156,7 @@ export function AppSidebar({
                 )
               })}
               {/* Dul Info Dropdown Menu using shadcn ui Collapsible */}
+              {userRole === "ADMIN" &&(
               <Collapsible
                 open={isDulInfoOpen}
                 onOpenChange={setIsDulInfoOpen}
@@ -190,8 +191,8 @@ export function AppSidebar({
                       }`}
                     />
                   </CollapsibleTrigger>
-
-                  <CollapsibleContent>
+                
+                    <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         {dulInfo.map(dul=>(
@@ -214,6 +215,8 @@ export function AppSidebar({
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible> 
+            )} 
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
