@@ -114,7 +114,7 @@ export function AddExpandTransaction (){
                             </button>
                         )}
                     </div>
-                    <div className=" grid grid-cols-4 gap-3 align-middle">
+                    <div className=" grid  grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 align-middle">
                         <label className={labelClass}>ចំណងជើង<input type="text" className={fieldClass} placeholder="ឈ្មោះទំនិញ" name="title" maxLength={120} required /></label>
                         <label className={`${labelClass} shrink-0 `}>ប្រភេទ<select className={`${fieldClass} `} name="type" defaultValue="EXPENSE"><option value="EXPENSE">ចំណាយ (EXPENSE)</option><option value="INCOME">ចំណូល (INCOME)</option></select></label>
                         <label className={labelClass}>ចំនួនទឹកប្រាក់<AmountInput  name="amount" placeholder="50,000" required /></label>
